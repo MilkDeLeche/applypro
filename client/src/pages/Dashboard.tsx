@@ -31,7 +31,7 @@ export default function Dashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-4xl md:text-5xl font-bold font-display tracking-tight text-foreground"
               >
-                Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-violet-600">{data.user.username}</span>
+                Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-violet-600">{data.user.firstName || data.user.email || "there"}</span>
               </motion.h1>
               <motion.p 
                 initial={{ opacity: 0, y: 20 }}
@@ -278,9 +278,15 @@ function EditProfileDialog({ user }: { user: any }) {
           <DialogTitle>Edit Profile</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
-            <Input id="name" {...register("name")} />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input id="firstName" {...register("firstName")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input id="lastName" {...register("lastName")} />
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
