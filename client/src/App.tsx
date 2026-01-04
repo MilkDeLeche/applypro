@@ -1,4 +1,4 @@
-import { Switch, Route, Redirect } from "wouter";
+import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -12,44 +12,28 @@ import Landing from "@/pages/Landing";
 import ExtensionGuide from "@/pages/ExtensionGuide";
 import NotFound from "@/pages/not-found";
 
-function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { user, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Redirect to="/landing" />;
-  }
-
-  return <Component />;
+function LoadingSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </div>
+  );
 }
 
-function Router() {
+function AppContent() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
     <>
-      <Navigation />
+      {user && <Navigation />}
       <Switch>
-        <Route path="/landing">
-          {user ? <Redirect to="/" /> : <Landing />}
+        <Route path="/extension">
+          {user ? <ExtensionGuide /> : <Landing />}
         </Route>
-        
-        <Route path="/extension" component={ExtensionGuide} />
         
         <Route path="/">
           {user ? <Dashboard /> : <Landing />}
@@ -65,7 +49,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Router />
+        <AppContent />
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
