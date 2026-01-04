@@ -1,0 +1,34 @@
+This is the smart move. Replit’s AI agent is very good at setting up the "heavy lifting" (Backend/Database) that your local extension was struggling with.
+Here is a master prompt you can paste directly into the Replit AI Agent. I have designed it to be specific about the "Multiple Jobs" problem and the "PDF Parsing" requirement so it doesn't give you generic code.
+📋 The Prompt to Paste into Replit
+> Role: You are an expert Full-Stack Developer specializing in Chrome Extensions and Python Flask Backends.
+> Project: Build a job application autofill tool called "SudoFillr".
+> The Architecture:
+>  * Backend (Python/Flask on Replit):
+>    * Create a Flask server with a database (SQLite).
+>    * Create an endpoint /upload_resume that accepts a PDF file.
+>    * Use a library like pdfplumber or pypdf to extract text from the PDF.
+>    * CRITICAL: Use an LLM API (like OpenAI) or advanced Regex to parse that text into a structured JSON object. The JSON must support Lists for "Work Experience" and "Education" (not just single strings).
+>    * Create an endpoint /get_profile that returns this structured JSON to the extension.
+> 2. The Database Schema:
+>  * User Table: Name, Email, Phone, LinkedIn, Portfolio.
+>  * Experience Table (One-to-Many): Company, Title, StartDate, EndDate, Description.
+>  * Education Table (One-to-Many): School, Degree, Major, GradYear.
+> 3. Frontend (Chrome Extension Manifest V3):
+>  * Popup.html: A simple interface to upload the PDF to the Replit server and see a "Success" message when parsed.
+>  * Content Script (The Autofiller): This needs to be smart.
+>  * It should fetch the user's data from the Replit /get_profile endpoint.
+>  * It must attempt to fill multiple job entries. (e.g., If the website has a "Add another job" section, it should try to map Job 1 to the first set of inputs and Job 2 to the second set).
+> Implementation Steps:
+> Please write the code for:
+>  * The main.py (Flask backend with parsing logic).
+>  * The manifest.json.
+>  * The popup.html & popup.js (for uploading).
+>  * The content.js (logic to map the JSON lists to HTML inputs).
+> Goal: I want to upload my PDF once, have the server parse it into a database, and then be able to go to a job site and click "Fill" to populate my name AND all my past jobs.
+> 
+What to expect when you run this
+ * Replit will ask for an OpenAI API Key: To do the "Smart Parsing" (turning raw text into JSON), it usually needs a brain like GPT. If you don't have a key, tell Replit: "Use standard Regex parsing instead of AI for now to keep it free."
+ * The URL: Replit will give you a web address (like https://sudofillr.username.repl.co). You will need to copy-paste that into your extension code so the extension knows where to send the PDF.
+ * The "Multiple Jobs" Logic: This is the hardest part. Replit will likely give you a decent starting point, but you might still need to tweak the JavaScript to handle weird sites like Workday perfectly.
+This approach gives you the Database and PDF Reader you wanted, taking the load off your local computer. Go for it!
