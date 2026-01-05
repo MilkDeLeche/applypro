@@ -93,16 +93,70 @@ export async function registerRoutes(
       });
       
       const prompt = `
-        You are a resume parser. Extract the following information from the resume text below and return it in JSON format.
+        You are an expert resume parser specializing in international formats, especially Latin American (LATAM) resumes/CVs.
         
-        Fields to extract:
-        - name (string)
-        - email (string)
-        - phone (string)
-        - linkedin (string)
-        - portfolio (string)
-        - experience (array of objects with: company, title, startDate, endDate, description)
-        - education (array of objects with: school, degree, major, gradYear)
+        STEP 1: Detect the resume format/country:
+        - Look for indicators like RFC, CURP (Mexico), RUT (Chile), or Spanish language usage
+        - Check for LATAM name patterns (double last names: apellido paterno + apellido materno)
+        - Look for LATAM address formats: colonia, delegacion (Mexico) or comuna, region (Chile)
+        - Detect phone formats: +52 (Mexico), +56 (Chile), +1 (US/Canada)
+        
+        STEP 2: Extract all fields in JSON format:
+        
+        {
+          "detectedCountry": "mx" | "cl" | "us" | "other",
+          "firstName": "string (nombre)",
+          "lastName": "string (for US/other - single last name)",
+          "paternalLastName": "string (apellido paterno - for LATAM)",
+          "maternalLastName": "string (apellido materno - for LATAM)",
+          "email": "string",
+          "phone": "string (local format without country code)",
+          "phoneCountryCode": "string (+52, +56, +1, etc)",
+          "linkedin": "string (full URL)",
+          "portfolio": "string (full URL)",
+          "rfc": "string (Mexican tax ID - 13 chars)",
+          "curp": "string (Mexican ID - 18 chars)",
+          "rut": "string (Chilean tax ID - format XX.XXX.XXX-X)",
+          "address": "string (street address / calle y numero)",
+          "colonia": "string (Mexican neighborhood)",
+          "delegacion": "string (Mexican municipality)",
+          "comuna": "string (Chilean commune)",
+          "region": "string (Chilean region)",
+          "city": "string (ciudad)",
+          "state": "string (estado/region)",
+          "zip": "string (codigo postal)",
+          "experience": [
+            {
+              "company": "string",
+              "title": "string (original language)",
+              "titleEnglish": "string (translated to English if original is Spanish)",
+              "startDate": "string (format: Mon YYYY)",
+              "endDate": "string (format: Mon YYYY or 'Present')",
+              "description": "string (original language)",
+              "descriptionEnglish": "string (translated to English if original is Spanish)",
+              "location": "string (city, country)"
+            }
+          ],
+          "education": [
+            {
+              "school": "string",
+              "degree": "string (original language)",
+              "degreeEnglish": "string (translated to English if original is Spanish)",
+              "major": "string (original language)",
+              "majorEnglish": "string (translated to English if original is Spanish)",
+              "gradYear": "string (YYYY)",
+              "location": "string (city, country)"
+            }
+          ]
+        }
+        
+        IMPORTANT RULES:
+        - For LATAM resumes, ALWAYS split the last name into paternalLastName and maternalLastName
+        - For US resumes, use lastName field and leave paternal/maternal empty
+        - Always translate Spanish job titles and descriptions to professional English
+        - Normalize dates to "Mon YYYY" format (e.g., "Jan 2022")
+        - If RFC/CURP/RUT not found, leave those fields empty
+        - Extract all experience and education entries found
         
         Resume Text:
         ${text.substring(0, 10000)}
@@ -133,18 +187,52 @@ export async function registerRoutes(
         }
       }
 
-      // Map parsed data to our schema structure
+      // Map parsed data to our schema structure with LATAM support
+      const isLatam = parsedData.detectedCountry === 'mx' || parsedData.detectedCountry === 'cl';
+      
       const updateData = {
         user: {
-            firstName: parsedData.name?.split(' ')[0] || parsedData.firstName,
-            lastName: parsedData.name?.split(' ').slice(1).join(' ') || parsedData.lastName,
+            firstName: parsedData.firstName || parsedData.name?.split(' ')[0],
+            lastName: isLatam ? null : (parsedData.lastName || parsedData.name?.split(' ').slice(1).join(' ')),
+            paternalLastName: parsedData.paternalLastName || null,
+            maternalLastName: parsedData.maternalLastName || null,
             email: parsedData.email,
             phone: parsedData.phone,
+            phoneCountryCode: parsedData.phoneCountryCode || null,
             linkedin: parsedData.linkedin,
-            portfolio: parsedData.portfolio
+            portfolio: parsedData.portfolio,
+            country: parsedData.detectedCountry || 'us',
+            address: parsedData.address || null,
+            city: parsedData.city || null,
+            state: parsedData.state || null,
+            zip: parsedData.zip || null,
+            colonia: parsedData.colonia || null,
+            delegacion: parsedData.delegacion || null,
+            comuna: parsedData.comuna || null,
+            region: parsedData.region || null,
+            rfc: parsedData.rfc || null,
+            curp: parsedData.curp || null,
+            rut: parsedData.rut || null
         },
-        experience: parsedData.experience || [],
-        education: parsedData.education || []
+        experience: (parsedData.experience || []).map((exp: any) => ({
+          company: exp.company,
+          title: exp.title,
+          titleEnglish: exp.titleEnglish || null,
+          startDate: exp.startDate,
+          endDate: exp.endDate,
+          description: exp.description,
+          descriptionEnglish: exp.descriptionEnglish || null,
+          location: exp.location || null
+        })),
+        education: (parsedData.education || []).map((edu: any) => ({
+          school: edu.school,
+          degree: edu.degree,
+          degreeEnglish: edu.degreeEnglish || null,
+          major: edu.major,
+          majorEnglish: edu.majorEnglish || null,
+          gradYear: edu.gradYear,
+          location: edu.location || null
+        }))
       };
 
       const resumeProfile = await storage.updateProfileWithParsedData(userId, profileId, updateData);

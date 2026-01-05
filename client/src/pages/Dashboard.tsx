@@ -8,10 +8,13 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Trash2, Briefcase, GraduationCap, Link2, Linkedin, User as UserIcon, Mail, Phone, Calendar, RotateCcw } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Plus, Trash2, Briefcase, GraduationCap, Link2, Linkedin, User as UserIcon, Mail, Phone, Calendar, RotateCcw, Globe } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
 import { motion } from "framer-motion";
+import { SUPPORTED_COUNTRIES, type SupportedCountry } from "@shared/schema";
 
 export default function Dashboard() {
   const { data, isLoading } = useProfile();
@@ -280,9 +283,17 @@ function EmptyState({ title, description }: { title: string, description: string
 function EditProfileDialog({ user }: { user: any }) {
   const [open, setOpen] = useState(false);
   const { mutate, isPending } = useUpdateProfile();
-  const { register, handleSubmit } = useForm({
-    defaultValues: user
+  const { register, handleSubmit, control, watch, setValue } = useForm({
+    defaultValues: {
+      ...user,
+      country: user.country || 'us'
+    }
   });
+
+  const selectedCountry = watch("country") as SupportedCountry;
+  const isLatam = selectedCountry === SUPPORTED_COUNTRIES.MX || selectedCountry === SUPPORTED_COUNTRIES.CL;
+  const isMexico = selectedCountry === SUPPORTED_COUNTRIES.MX;
+  const isChile = selectedCountry === SUPPORTED_COUNTRIES.CL;
 
   const onSubmit = (data: any) => {
     mutate(data, {
@@ -290,72 +301,184 @@ function EditProfileDialog({ user }: { user: any }) {
     });
   };
 
+  const getCountryLabel = (code: string) => {
+    switch(code) {
+      case 'us': return 'United States';
+      case 'mx': return 'Mexico';
+      case 'cl': return 'Chile';
+      case 'other': return 'Other';
+      default: return 'Select country';
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Edit Profile</Button>
+        <Button variant="outline" data-testid="button-edit-profile">Edit Profile</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] p-0">
+        <DialogHeader className="px-6 pt-6 pb-2">
+          <DialogTitle className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-primary" />
+            Edit Profile
+          </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">
-          <div className="grid grid-cols-2 gap-4">
+        <ScrollArea className="max-h-[70vh] px-6 pb-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-2">
             <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <Input id="firstName" {...register("firstName")} />
+              <Label>Country</Label>
+              <Controller
+                name="country"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value || 'us'} onValueChange={field.onChange}>
+                    <SelectTrigger data-testid="select-country">
+                      <SelectValue placeholder="Select country">{getCountryLabel(field.value)}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="us">United States</SelectItem>
+                      <SelectItem value="mx">Mexico</SelectItem>
+                      <SelectItem value="cl">Chile</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {isLatam && (
+                <p className="text-xs text-muted-foreground">
+                  LATAM mode enabled - additional fields for {isMexico ? 'Mexican' : 'Chilean'} CVs
+                </p>
+              )}
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input id="lastName" {...register("lastName")} />
+              <Label htmlFor="firstName">First Name / Nombre</Label>
+              <Input id="firstName" {...register("firstName")} data-testid="input-firstName" />
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" {...register("email")} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
-            <Input id="phone" {...register("phone")} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="linkedin">LinkedIn URL</Label>
-            <Input id="linkedin" {...register("linkedin")} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="portfolio">Portfolio URL</Label>
-            <Input id="portfolio" {...register("portfolio")} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="address">Street Address</Label>
-            <Input id="address" {...register("address")} placeholder="123 Main St" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+
+            {isLatam ? (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="paternalLastName">Apellido Paterno</Label>
+                  <Input id="paternalLastName" {...register("paternalLastName")} placeholder="Garcia" data-testid="input-paternalLastName" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maternalLastName">Apellido Materno</Label>
+                  <Input id="maternalLastName" {...register("maternalLastName")} placeholder="Lopez" data-testid="input-maternalLastName" />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input id="lastName" {...register("lastName")} data-testid="input-lastName" />
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="city">City</Label>
-              <Input id="city" {...register("city")} />
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" {...register("email")} data-testid="input-email" />
             </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-2">
+                <Label htmlFor="phoneCountryCode">Code</Label>
+                <Input 
+                  id="phoneCountryCode" 
+                  {...register("phoneCountryCode")} 
+                  placeholder={isMexico ? "+52" : isChile ? "+56" : "+1"} 
+                  data-testid="input-phoneCountryCode"
+                />
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" {...register("phone")} data-testid="input-phone" />
+              </div>
+            </div>
+
+            {isMexico && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="rfc">RFC</Label>
+                  <Input id="rfc" {...register("rfc")} placeholder="XXXX000000XXX" data-testid="input-rfc" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="curp">CURP</Label>
+                  <Input id="curp" {...register("curp")} placeholder="XXXX000000XXXXXX00" data-testid="input-curp" />
+                </div>
+              </div>
+            )}
+
+            {isChile && (
+              <div className="space-y-2">
+                <Label htmlFor="rut">RUT</Label>
+                <Input id="rut" {...register("rut")} placeholder="12.345.678-9" data-testid="input-rut" />
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="state">State</Label>
-              <Input id="state" {...register("state")} />
+              <Label htmlFor="linkedin">LinkedIn URL</Label>
+              <Input id="linkedin" {...register("linkedin")} data-testid="input-linkedin" />
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+
             <div className="space-y-2">
-              <Label htmlFor="zip">ZIP Code</Label>
-              <Input id="zip" {...register("zip")} />
+              <Label htmlFor="portfolio">Portfolio URL</Label>
+              <Input id="portfolio" {...register("portfolio")} data-testid="input-portfolio" />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="country">Country</Label>
-              <Input id="country" {...register("country")} />
+              <Label htmlFor="address">{isMexico ? 'Calle y Numero' : isChile ? 'Direccion' : 'Street Address'}</Label>
+              <Input id="address" {...register("address")} placeholder={isMexico ? "Av. Reforma 123" : "123 Main St"} data-testid="input-address" />
             </div>
-          </div>
-          <div className="flex justify-end pt-4">
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Saving..." : "Save Changes"}
-            </Button>
-          </div>
-        </form>
+
+            {isMexico && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="colonia">Colonia</Label>
+                  <Input id="colonia" {...register("colonia")} placeholder="Centro" data-testid="input-colonia" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="delegacion">Delegacion/Municipio</Label>
+                  <Input id="delegacion" {...register("delegacion")} placeholder="Cuauhtemoc" data-testid="input-delegacion" />
+                </div>
+              </div>
+            )}
+
+            {isChile && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="comuna">Comuna</Label>
+                  <Input id="comuna" {...register("comuna")} placeholder="Las Condes" data-testid="input-comuna" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="region">Region</Label>
+                  <Input id="region" {...register("region")} placeholder="Metropolitana" data-testid="input-region" />
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="city">{isMexico ? 'Ciudad' : isChile ? 'Ciudad' : 'City'}</Label>
+                <Input id="city" {...register("city")} data-testid="input-city" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state">{isMexico ? 'Estado' : isChile ? 'Region' : 'State'}</Label>
+                <Input id="state" {...register("state")} data-testid="input-state" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="zip">{isMexico ? 'Codigo Postal' : isChile ? 'Codigo Postal' : 'ZIP Code'}</Label>
+              <Input id="zip" {...register("zip")} data-testid="input-zip" />
+            </div>
+
+            <div className="flex justify-end pt-4 sticky bottom-0 bg-background">
+              <Button type="submit" disabled={isPending} data-testid="button-save-profile">
+                {isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          </form>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

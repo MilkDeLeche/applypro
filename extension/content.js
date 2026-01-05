@@ -316,8 +316,18 @@
       });
     }
     
-    // Build full name from first and last
-    const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
+    // Detect if user has LATAM profile (double last names)
+    const isLatam = user.paternalLastName || user.maternalLastName;
+    
+    // Build full name based on profile type
+    const fullName = isLatam
+      ? [user.firstName, user.paternalLastName, user.maternalLastName].filter(Boolean).join(' ')
+      : [user.firstName, user.lastName].filter(Boolean).join(' ');
+    
+    // Combined last name for LATAM (some forms want single field)
+    const combinedLastName = isLatam
+      ? [user.paternalLastName, user.maternalLastName].filter(Boolean).join(' ')
+      : user.lastName;
     
     // Get all fillable inputs
     const inputs = document.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]), textarea');
@@ -328,22 +338,33 @@
       // Skip if input is disabled, readonly, or already filled
       if (input.disabled || input.readOnly) return;
       
-      // First Name
-      if (matchesField(input, ['firstname', 'first_name', 'first-name', 'fname', 'given-name', 'givenname'])) {
+      // First Name / Nombre
+      if (matchesField(input, ['firstname', 'first_name', 'first-name', 'fname', 'given-name', 'givenname', 'nombre', 'nombres', 'primer_nombre'])) {
         if (setValue(input, user.firstName)) filledCount++;
         return;
       }
       
-      // Last Name
-      if (matchesField(input, ['lastname', 'last_name', 'last-name', 'lname', 'surname', 'family-name', 'familyname'])) {
-        if (setValue(input, user.lastName)) filledCount++;
+      // Paternal Last Name / Apellido Paterno (LATAM)
+      if (matchesField(input, ['paternal', 'apellido_paterno', 'apellidopaterno', 'apellido-paterno', 'ap_paterno', 'primer_apellido', 'primerapellido'])) {
+        if (setValue(input, user.paternalLastName)) filledCount++;
+        return;
+      }
+      
+      // Maternal Last Name / Apellido Materno (LATAM)
+      if (matchesField(input, ['maternal', 'apellido_materno', 'apellidomaterno', 'apellido-materno', 'ap_materno', 'segundo_apellido', 'segundoapellido'])) {
+        if (setValue(input, user.maternalLastName)) filledCount++;
+        return;
+      }
+      
+      // Regular Last Name / Apellido (combines both for LATAM if needed)
+      if (matchesField(input, ['lastname', 'last_name', 'last-name', 'lname', 'surname', 'family-name', 'familyname', 'apellido', 'apellidos'])) {
+        if (setValue(input, combinedLastName)) filledCount++;
         return;
       }
       
       // Full Name (check after first/last to avoid conflicts)
-      // Strict exclusion list to avoid filling company/job fields with person's name
       const nameExclusions = ['company', 'employer', 'organization', 'job', 'title', 'position', 'school', 'university', 'file', 'domain', 'user'];
-      if (matchesField(input, ['fullname', 'full_name', 'full-name', 'your-name', 'yourname', 'applicant-name']) && 
+      if (matchesField(input, ['fullname', 'full_name', 'full-name', 'your-name', 'yourname', 'applicant-name', 'nombre_completo', 'nombrecompleto']) && 
           !matchesExclusion(input, nameExclusions)) {
         if (setValue(input, fullName)) filledCount++;
         return;
@@ -404,28 +425,114 @@
       }
       
       if (user.country) {
-        if (matchesField(input, ['country', 'nation'])) {
-          if (setValue(input, user.country)) filledCount++;
+        if (matchesField(input, ['country', 'nation', 'pais'])) {
+          // Map country codes to full names for some forms
+          const countryNames = {
+            'us': 'United States',
+            'mx': 'Mexico',
+            'cl': 'Chile'
+          };
+          const countryValue = countryNames[user.country] || user.country;
+          if (setValue(input, countryValue)) filledCount++;
+          return;
+        }
+      }
+      
+      // LATAM-specific fields
+      
+      // RFC (Mexico tax ID)
+      if (user.rfc) {
+        if (matchesField(input, ['rfc', 'registro_federal', 'registrofederal', 'taxid_mx'])) {
+          if (setValue(input, user.rfc)) filledCount++;
+          return;
+        }
+      }
+      
+      // CURP (Mexico ID)
+      if (user.curp) {
+        if (matchesField(input, ['curp', 'clave_unica', 'claveunica'])) {
+          if (setValue(input, user.curp)) filledCount++;
+          return;
+        }
+      }
+      
+      // RUT (Chile tax ID)
+      if (user.rut) {
+        if (matchesField(input, ['rut', 'run', 'rut_run', 'taxid_cl'])) {
+          if (setValue(input, user.rut)) filledCount++;
+          return;
+        }
+      }
+      
+      // Colonia (Mexico neighborhood)
+      if (user.colonia) {
+        if (matchesField(input, ['colonia', 'neighborhood', 'barrio'])) {
+          if (setValue(input, user.colonia)) filledCount++;
+          return;
+        }
+      }
+      
+      // Delegacion/Municipio (Mexico)
+      if (user.delegacion) {
+        if (matchesField(input, ['delegacion', 'municipio', 'alcaldia', 'delegation'])) {
+          if (setValue(input, user.delegacion)) filledCount++;
+          return;
+        }
+      }
+      
+      // Comuna (Chile)
+      if (user.comuna) {
+        if (matchesField(input, ['comuna', 'commune', 'district'])) {
+          if (setValue(input, user.comuna)) filledCount++;
+          return;
+        }
+      }
+      
+      // Region (Chile)
+      if (user.region) {
+        if (matchesField(input, ['region', 'provincia'])) {
+          if (setValue(input, user.region)) filledCount++;
+          return;
+        }
+      }
+      
+      // Phone Country Code
+      if (user.phoneCountryCode) {
+        if (matchesField(input, ['countrycode', 'country_code', 'phone_code', 'codigo_pais', 'lada'])) {
+          if (setValue(input, user.phoneCountryCode)) filledCount++;
           return;
         }
       }
     });
     
+    // Detect if page is likely English-based (for deciding which version to use)
+    const isEnglishPage = document.documentElement.lang?.startsWith('en') || 
+                          !document.documentElement.lang ||
+                          /linkedin|indeed|workday|greenhouse|lever|ashby|bamboo/i.test(window.location.hostname);
+    
+    // Helper to get title/description - prefer English translation for English sites, original for Spanish sites
+    function getLocalizedValue(original, english) {
+      if (isEnglishPage && english) return english;
+      return original;
+    }
+    
     // Experience fields - try to fill company and title if present
     if (experience.length > 0) {
-      const companyInputs = Array.from(inputs).filter(i => matchesField(i, ['company', 'employer', 'organization', 'companyname', 'company_name']));
-      const titleInputs = Array.from(inputs).filter(i => matchesField(i, ['title', 'position', 'role', 'jobtitle', 'job_title', 'job-title']));
-      const descriptionInputs = Array.from(inputs).filter(i => matchesField(i, ['description', 'responsibilities', 'duties', 'summary']));
+      const companyInputs = Array.from(inputs).filter(i => matchesField(i, ['company', 'employer', 'organization', 'companyname', 'company_name', 'empresa']));
+      const titleInputs = Array.from(inputs).filter(i => matchesField(i, ['title', 'position', 'role', 'jobtitle', 'job_title', 'job-title', 'puesto', 'cargo']));
+      const descriptionInputs = Array.from(inputs).filter(i => matchesField(i, ['description', 'responsibilities', 'duties', 'summary', 'descripcion', 'funciones']));
       
       experience.forEach((exp, i) => {
         if (companyInputs[i] && exp.company) {
           if (setValue(companyInputs[i], exp.company)) filledCount++;
         }
-        if (titleInputs[i] && exp.title) {
-          if (setValue(titleInputs[i], exp.title)) filledCount++;
+        if (titleInputs[i]) {
+          const title = getLocalizedValue(exp.title, exp.titleEnglish);
+          if (title && setValue(titleInputs[i], title)) filledCount++;
         }
-        if (descriptionInputs[i] && exp.description) {
-          if (setValue(descriptionInputs[i], exp.description)) filledCount++;
+        if (descriptionInputs[i]) {
+          const desc = getLocalizedValue(exp.description, exp.descriptionEnglish);
+          if (desc && setValue(descriptionInputs[i], desc)) filledCount++;
         }
       });
       
@@ -433,26 +540,29 @@
       if (companyInputs.length === 1 && experience[0]?.company) {
         setValue(companyInputs[0], experience[0].company);
       }
-      if (titleInputs.length === 1 && experience[0]?.title) {
-        setValue(titleInputs[0], experience[0].title);
+      if (titleInputs.length === 1 && experience[0]) {
+        const title = getLocalizedValue(experience[0].title, experience[0].titleEnglish);
+        if (title) setValue(titleInputs[0], title);
       }
     }
     
     // Education fields
     if (education.length > 0) {
-      const schoolInputs = Array.from(inputs).filter(i => matchesField(i, ['school', 'university', 'college', 'institution', 'schoolname']));
-      const degreeInputs = Array.from(inputs).filter(i => matchesField(i, ['degree', 'qualification', 'certification']));
-      const majorInputs = Array.from(inputs).filter(i => matchesField(i, ['major', 'field', 'fieldofstudy', 'field_of_study', 'concentration', 'specialization']));
+      const schoolInputs = Array.from(inputs).filter(i => matchesField(i, ['school', 'university', 'college', 'institution', 'schoolname', 'universidad', 'escuela', 'institucion']));
+      const degreeInputs = Array.from(inputs).filter(i => matchesField(i, ['degree', 'qualification', 'certification', 'titulo', 'grado']));
+      const majorInputs = Array.from(inputs).filter(i => matchesField(i, ['major', 'field', 'fieldofstudy', 'field_of_study', 'concentration', 'specialization', 'carrera', 'especialidad']));
       
       education.forEach((edu, i) => {
         if (schoolInputs[i] && edu.school) {
           if (setValue(schoolInputs[i], edu.school)) filledCount++;
         }
-        if (degreeInputs[i] && edu.degree) {
-          if (setValue(degreeInputs[i], edu.degree)) filledCount++;
+        if (degreeInputs[i]) {
+          const degree = getLocalizedValue(edu.degree, edu.degreeEnglish);
+          if (degree && setValue(degreeInputs[i], degree)) filledCount++;
         }
-        if (majorInputs[i] && edu.major) {
-          if (setValue(majorInputs[i], edu.major)) filledCount++;
+        if (majorInputs[i]) {
+          const major = getLocalizedValue(edu.major, edu.majorEnglish);
+          if (major && setValue(majorInputs[i], major)) filledCount++;
         }
       });
       
@@ -460,8 +570,9 @@
       if (schoolInputs.length === 1 && education[0]?.school) {
         setValue(schoolInputs[0], education[0].school);
       }
-      if (degreeInputs.length === 1 && education[0]?.degree) {
-        setValue(degreeInputs[0], education[0].degree);
+      if (degreeInputs.length === 1 && education[0]) {
+        const degree = getLocalizedValue(education[0].degree, education[0].degreeEnglish);
+        if (degree) setValue(degreeInputs[0], degree);
       }
     }
     

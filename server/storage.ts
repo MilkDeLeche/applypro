@@ -306,14 +306,24 @@ export class DatabaseStorage implements IStorage {
     await db.update(users).set({
       firstName: null,
       lastName: null,
+      paternalLastName: null,
+      maternalLastName: null,
       phone: null,
+      phoneCountryCode: null,
       linkedin: null,
       portfolio: null,
       address: null,
       city: null,
       state: null,
       zip: null,
-      country: null
+      country: null,
+      colonia: null,
+      delegacion: null,
+      comuna: null,
+      region: null,
+      rfc: null,
+      curp: null,
+      rut: null
     }).where(eq(users.id, userId));
   }
 

@@ -12,6 +12,16 @@ export const SUBSCRIPTION_TIERS = {
 
 export type SubscriptionTier = typeof SUBSCRIPTION_TIERS[keyof typeof SUBSCRIPTION_TIERS];
 
+// === SUPPORTED COUNTRIES ===
+export const SUPPORTED_COUNTRIES = {
+  US: 'us',
+  MX: 'mx',
+  CL: 'cl',
+  OTHER: 'other'
+} as const;
+
+export type SupportedCountry = typeof SUPPORTED_COUNTRIES[keyof typeof SUPPORTED_COUNTRIES];
+
 // === TABLE DEFINITIONS ===
 
 export const users = pgTable("users", {
@@ -19,15 +29,25 @@ export const users = pgTable("users", {
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
+  paternalLastName: text("paternal_last_name"),
+  maternalLastName: text("maternal_last_name"),
   profileImageUrl: varchar("profile_image_url"),
   linkedin: text("linkedin"),
   portfolio: text("portfolio"),
   phone: text("phone"),
+  phoneCountryCode: text("phone_country_code"),
   address: text("address"),
   city: text("city"),
   state: text("state"),
   zip: text("zip"),
   country: text("country"),
+  colonia: text("colonia"),
+  delegacion: text("delegacion"),
+  comuna: text("comuna"),
+  region: text("region"),
+  rfc: text("rfc"),
+  curp: text("curp"),
+  rut: text("rut"),
   subscriptionTier: text("subscription_tier").default('free'),
   activeProfileId: integer("active_profile_id"),
   stripeCustomerId: text("stripe_customer_id"),
@@ -52,9 +72,12 @@ export const experience = pgTable("experience", {
   profileId: integer("profile_id").references(() => profiles.id),
   company: text("company").notNull(),
   title: text("title").notNull(),
+  titleEnglish: text("title_english"),
   startDate: text("start_date"),
   endDate: text("end_date"),
   description: text("description"),
+  descriptionEnglish: text("description_english"),
+  location: text("location"),
 });
 
 export const education = pgTable("education", {
@@ -63,8 +86,11 @@ export const education = pgTable("education", {
   profileId: integer("profile_id").references(() => profiles.id),
   school: text("school").notNull(),
   degree: text("degree"),
+  degreeEnglish: text("degree_english"),
   major: text("major"),
+  majorEnglish: text("major_english"),
   gradYear: text("grad_year"),
+  location: text("location"),
 });
 
 // === RELATIONS ===

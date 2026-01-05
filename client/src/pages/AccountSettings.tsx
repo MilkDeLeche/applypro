@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { AlertTriangle, Settings } from "lucide-react";
+import { AlertTriangle, Settings, ShieldCheck, Lock, Ban, CheckCircle } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 
@@ -32,16 +32,80 @@ export default function AccountSettings() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
+          <PrivacySection />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
           <DeleteAccountSection />
         </motion.div>
       </main>
     </div>
+  );
+}
+
+function PrivacySection() {
+  return (
+    <Card className="border-emerald-500/30 bg-emerald-500/5">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+          <ShieldCheck className="w-5 h-5" />
+          Your Privacy Commitment
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          At SudoFillr, your privacy is not a feature - it's our foundation. Unlike other autofill tools, we never monetize your data.
+        </p>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <PrivacyItem 
+            icon={<Ban className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
+            title="Never Sold"
+            description="Your data is never sold or shared with third parties"
+          />
+          <PrivacyItem 
+            icon={<Lock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
+            title="Encrypted"
+            description="All data encrypted at rest and in transit"
+          />
+          <PrivacyItem 
+            icon={<CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
+            title="You Own Your Data"
+            description="Delete everything anytime with one click below"
+          />
+          <PrivacyItem 
+            icon={<ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
+            title="No Tracking"
+            description="We don't track your browsing or job applications"
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PrivacyItem({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
+  return (
+    <Card className="bg-background/50">
+      <CardContent className="p-4 flex items-start gap-3">
+        <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
+          {icon}
+        </div>
+        <div>
+          <p className="font-medium text-sm text-foreground">{title}</p>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

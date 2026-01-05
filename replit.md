@@ -35,11 +35,19 @@ Preferred communication style: Simple, everyday language.
 - **Database**: PostgreSQL with Drizzle ORM
 - **Schema Location**: `shared/schema.ts` defines all tables
 - **Key Tables**:
-  - `users`: Core user profile (name, email, phone, LinkedIn, portfolio, Stripe info, usage limits)
-  - `experience`: One-to-many work history (company, title, dates, description)
-  - `education`: One-to-many education records (school, degree, major, grad year)
+  - `users`: Core user profile with LATAM support (firstName, paternalLastName, maternalLastName for double last names, RFC/CURP/RUT for tax IDs, colonia/delegacion/comuna/region for LATAM addresses)
+  - `experience`: One-to-many work history with English translations (company, title, titleEnglish, description, descriptionEnglish, location)
+  - `education`: One-to-many education records with English translations (school, degree, degreeEnglish, major, majorEnglish, gradYear, location)
   - `sessions`: Auth session storage (required for Replit Auth)
 - **Migrations**: Drizzle Kit with `db:push` command
+
+### LATAM Support
+- **Countries Supported**: Mexico (mx), Chile (cl), USA (us), Other
+- **Double Last Names**: Apellido Paterno + Apellido Materno for Mexican/Chilean CVs
+- **Mexican Fields**: RFC, CURP, Colonia, Delegacion/Municipio
+- **Chilean Fields**: RUT, Comuna, Region
+- **Auto-Translation**: AI parser extracts both Spanish and English versions of job titles, descriptions, degrees, and majors
+- **Smart Autofill**: Extension detects page language and uses appropriate translation for international job applications
 
 ### Chrome Extension
 - **Manifest Version**: 3 (MV3)

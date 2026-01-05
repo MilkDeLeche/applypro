@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { Zap, ShieldCheck, MousePointerClick, ArrowRight } from "lucide-react";
+import { Zap, ShieldCheck, MousePointerClick, ArrowRight, Lock, Trash2, Globe, Ban } from "lucide-react";
 
 export default function Landing() {
   return (
@@ -89,6 +89,51 @@ export default function Landing() {
             description="Your data is stored securely and never shared with third parties."
           />
         </motion.div>
+
+        {/* Privacy Trust Section */}
+        <motion.section
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="w-full max-w-6xl mx-auto py-20 border-t border-border/40"
+        >
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-medium border border-emerald-500/20 mb-4">
+              <Lock className="w-4 h-4" />
+              <span>Your Data, Your Control</span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold font-display text-foreground mb-4">
+              Privacy is our <span className="text-emerald-500">promise</span>
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Unlike other autofill tools that monetize your data, SudoFillr keeps your information completely private.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <PrivacyCard 
+              icon={<Ban className="w-6 h-6 text-red-500" />}
+              title="Never Sold"
+              description="We never sell, share, or monetize your personal data. Ever."
+            />
+            <PrivacyCard 
+              icon={<Trash2 className="w-6 h-6 text-orange-500" />}
+              title="Delete Anytime"
+              description="One-click to permanently delete all your data from our servers."
+            />
+            <PrivacyCard 
+              icon={<Lock className="w-6 h-6 text-emerald-500" />}
+              title="Encrypted Storage"
+              description="Your resume data is encrypted at rest and in transit."
+            />
+            <PrivacyCard 
+              icon={<Globe className="w-6 h-6 text-violet-500" />}
+              title="LATAM Support"
+              description="Full support for Mexican and Chilean CV formats with local autofill."
+            />
+          </div>
+        </motion.section>
       </main>
 
       <footer className="py-8 text-center text-sm text-muted-foreground border-t border-border/40">
@@ -107,6 +152,20 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode, titl
         </div>
         <h3 className="text-xl font-bold font-display">{title}</h3>
         <p className="text-muted-foreground leading-relaxed">{description}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PrivacyCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
+  return (
+    <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+      <CardContent className="p-6 text-center space-y-3">
+        <div className="mx-auto w-12 h-12 rounded-full bg-background flex items-center justify-center shadow-sm">
+          {icon}
+        </div>
+        <h4 className="font-bold font-display">{title}</h4>
+        <p className="text-sm text-muted-foreground">{description}</p>
       </CardContent>
     </Card>
   );
