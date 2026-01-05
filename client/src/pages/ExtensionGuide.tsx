@@ -1,30 +1,39 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Puzzle, CheckCircle, Code } from "lucide-react";
+import { Chrome, Puzzle, Settings, Copy, Check } from "lucide-react";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 export default function ExtensionGuide() {
+  const [copied, setCopied] = useState(false);
+  
+  const copyUrl = () => {
+    navigator.clipboard.writeText(window.location.origin);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const steps = [
     {
-      title: "Download Extension",
-      description: "Get the extension package. This contains the 'manifest.json' and scripts.",
-      icon: <Download className="w-6 h-6 text-primary" />,
-      action: <Button variant="outline" size="sm" className="mt-2" disabled>Coming Soon</Button>
+      title: "Install from Chrome Web Store",
+      description: "Add the SudoFillr extension to Chrome with one click.",
+      icon: <Chrome className="w-6 h-6 text-primary" />,
+      action: (
+        <Button variant="default" size="sm" className="mt-3" disabled>
+          <Puzzle className="w-4 h-4 mr-2" />
+          Coming Soon to Chrome Web Store
+        </Button>
+      )
     },
     {
-      title: "Open Chrome Extensions",
-      description: "Navigate to chrome://extensions in your browser address bar.",
+      title: "Pin the Extension",
+      description: "Click the puzzle icon in Chrome's toolbar and pin SudoFillr for easy access.",
       icon: <Puzzle className="w-6 h-6 text-violet-500" />
     },
     {
-      title: "Enable Developer Mode",
-      description: "Toggle the 'Developer mode' switch in the top right corner.",
-      icon: <Code className="w-6 h-6 text-emerald-500" />
-    },
-    {
-      title: "Load Unpacked",
-      description: "Click 'Load unpacked' and select the folder you downloaded.",
-      icon: <CheckCircle className="w-6 h-6 text-blue-500" />
+      title: "Connect to Your Account",
+      description: "Open the extension, paste your server URL (shown below), and click Save.",
+      icon: <Settings className="w-6 h-6 text-emerald-500" />
     }
   ];
 
@@ -36,12 +45,12 @@ export default function ExtensionGuide() {
             Install the SudoFillr Extension
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            To start autofilling applications, you need to add our extension to your browser.
-            Follow these simple steps.
+            Add our browser extension to start autofilling job applications instantly.
+            Just 3 simple steps to get started.
           </p>
         </div>
 
-        <div className="grid gap-8">
+        <div className="grid gap-6">
           {steps.map((step, index) => (
             <motion.div
               key={index}
@@ -75,16 +84,41 @@ export default function ExtensionGuide() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mt-12 p-6 bg-gradient-to-r from-primary/10 to-violet-500/10 rounded-2xl border border-primary/10 text-center"
+          transition={{ delay: 0.4 }}
+          className="mt-10 p-6 bg-gradient-to-r from-primary/10 to-violet-500/10 rounded-2xl border border-primary/10"
         >
-          <h3 className="text-lg font-semibold text-foreground mb-2">Configure the Extension</h3>
-          <p className="text-muted-foreground mb-4">
-            Once installed, click the extension icon and enter the URL below to connect it to your dashboard:
-          </p>
-          <div className="inline-flex items-center gap-2 bg-background px-4 py-2 rounded-lg border border-border shadow-sm font-mono text-sm text-primary">
-            {window.location.origin}
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-foreground mb-2">Your Server URL</h3>
+            <p className="text-muted-foreground mb-4">
+              Copy this URL and paste it into the extension to connect your account:
+            </p>
+            <div className="inline-flex items-center gap-2">
+              <div className="bg-background px-4 py-3 rounded-lg border border-border shadow-sm font-mono text-sm text-primary">
+                {window.location.origin}
+              </div>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={copyUrl}
+                data-testid="button-copy-url"
+              >
+                {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+              </Button>
+            </div>
           </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="mt-8 text-center"
+        >
+          <h3 className="text-lg font-semibold text-foreground mb-3">How It Works</h3>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Once connected, visit any job application page. A small SudoFillr button will appear 
+            in the corner when form fields are detected. Click it to instantly fill your information!
+          </p>
         </motion.div>
       </div>
     </div>
