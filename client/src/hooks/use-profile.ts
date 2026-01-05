@@ -151,3 +151,123 @@ export function useDeleteEducation() {
     },
   });
 }
+
+type ResumeProfile = {
+  id: number;
+  userId: string;
+  name: string;
+  createdAt: string | null;
+};
+
+type ProfilesData = {
+  profiles: ResumeProfile[];
+  activeProfileId: number | null;
+};
+
+export function useProfiles() {
+  return useQuery<ProfilesData>({
+    queryKey: ['/api/profiles'],
+    queryFn: async () => {
+      const res = await fetch('/api/profiles', { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch profiles');
+      return res.json();
+    },
+  });
+}
+
+export function useCreateProfile() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const res = await fetch('/api/profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Failed to create profile');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/usage'] });
+      toast({ title: 'Created', description: 'New resume profile created' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useRenameProfile() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: number; name: string }) => {
+      const res = await fetch(`/api/profiles/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to rename profile');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+      toast({ title: 'Renamed', description: 'Profile renamed successfully' });
+    },
+  });
+}
+
+export function useDeleteProfile() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/profiles/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Failed to delete profile');
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+      queryClient.invalidateQueries({ queryKey: [api.profile.get.path] });
+      queryClient.invalidateQueries({ queryKey: ['/api/usage'] });
+      toast({ title: 'Deleted', description: 'Profile deleted' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useActivateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/profiles/${id}/activate`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to activate profile');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+      queryClient.invalidateQueries({ queryKey: [api.profile.get.path] });
+    },
+  });
+}
