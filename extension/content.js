@@ -47,12 +47,20 @@ function fillForm(profile) {
     return true;
   }
   
+  // Helper to split camelCase/PascalCase before lowercasing
+  function splitCamelCase(str) {
+    return str
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+      .toLowerCase();
+  }
+  
   // Get all text for an input (name, id, placeholder, label, aria-label)
   function getFieldIdentifiers(el) {
     const texts = [];
     
-    if (el.name) texts.push(el.name.toLowerCase());
-    if (el.id) texts.push(el.id.toLowerCase());
+    if (el.name) texts.push(splitCamelCase(el.name));
+    if (el.id) texts.push(splitCamelCase(el.id));
     if (el.placeholder) texts.push(el.placeholder.toLowerCase());
     if (el.getAttribute('aria-label')) texts.push(el.getAttribute('aria-label').toLowerCase());
     if (el.getAttribute('autocomplete')) texts.push(el.getAttribute('autocomplete').toLowerCase());
@@ -88,18 +96,17 @@ function fillForm(profile) {
   function matchesField(el, keywords) {
     const text = getFieldIdentifiers(el);
     return keywords.some(keyword => {
-      // Strict word boundary matching to avoid false positives (e.g., "name" matching "companyName")
-      // This regex ensures the keyword is either at word boundary or separated by common delimiters
+      // Strict word boundary matching to avoid false positives
       const regex = new RegExp(`(^|[^a-z0-9])${keyword}([^a-z0-9]|$)`, 'i');
       return regex.test(text);
     });
   }
   
-  // Check if field matches any exclusion keywords (uses substring matching for exclusions)
+  // Check if field matches any exclusion keywords
   function matchesExclusion(el, exclusions) {
     const text = getFieldIdentifiers(el);
     return exclusions.some(keyword => {
-      // For exclusions, we want to match if the keyword appears anywhere as a separate word
+      // For exclusions, match if the keyword appears as a separate word
       const regex = new RegExp(`(^|[^a-z0-9])${keyword}([^a-z0-9]|$)`, 'i');
       return regex.test(text);
     });
