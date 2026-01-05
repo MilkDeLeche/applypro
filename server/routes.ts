@@ -64,10 +64,15 @@ export async function registerRoutes(
     }
 
     try {
+      // Ensure uploads directory exists
+      if (!fs.existsSync('/tmp/uploads')) {
+        fs.mkdirSync('/tmp/uploads', { recursive: true });
+      }
+      
       // Dynamically import pdf-parse (CommonJS compatibility)
       if (!pdfParse) {
         const pdfModule = await import("pdf-parse");
-        pdfParse = pdfModule.PDFParse || pdfModule.default || pdfModule;
+        pdfParse = pdfModule.default || pdfModule;
       }
       
       const dataBuffer = fs.readFileSync(req.file.path);
@@ -76,6 +81,15 @@ export async function registerRoutes(
 
       // Clean up file
       fs.unlinkSync(req.file.path);
+
+      // Check for AI Integration credentials
+      if (!process.env.AI_INTEGRATIONS_OPENAI_API_KEY || !process.env.AI_INTEGRATIONS_OPENAI_BASE_URL) {
+        console.error("Missing AI Integration credentials:", {
+          hasApiKey: !!process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+          hasBaseUrl: !!process.env.AI_INTEGRATIONS_OPENAI_BASE_URL
+        });
+        return res.status(500).json({ message: "AI service not configured" });
+      }
 
       // AI Parsing - use Replit AI Integration
       const openai = new OpenAI({
@@ -96,12 +110,12 @@ export async function registerRoutes(
         - education (array of objects with: school, degree, major, gradYear)
         
         Resume Text:
-        ${text.substring(0, 10000)} // Truncate to avoid token limits if massive
+        ${text.substring(0, 10000)}
       `;
 
       const completion = await openai.chat.completions.create({
         messages: [{ role: "user", content: prompt }],
-        model: "gpt-4o",
+        model: "gpt-5",
         response_format: { type: "json_object" },
         max_completion_tokens: 8192,
       });
