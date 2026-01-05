@@ -4,7 +4,11 @@ import {
   type User, type InsertUser, type Experience, type InsertExperience, type Education, type InsertEducation,
   type UserProfile
 } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+
+const FREE_TIER_RESUME_LIMIT = 3;
+const FREE_TIER_AUTOFILL_LIMIT = 10;
+const PERIOD_DAYS = 30;
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -84,12 +88,10 @@ export class DatabaseStorage implements IStorage {
     experience: Omit<InsertExperience, "userId">[],
     education: Omit<InsertEducation, "userId">[]
   }): Promise<UserProfile> {
-    // Update basic info if provided
     if (Object.keys(data.user).length > 0) {
       await this.updateUser(userId, data.user);
     }
     
-    // Clear existing and add new (simple approach for "overwrite with resume")
     await db.delete(experience).where(eq(experience.userId, userId));
     await db.delete(education).where(eq(education.userId, userId));
     
@@ -102,6 +104,94 @@ export class DatabaseStorage implements IStorage {
     }
     
     return this.getProfile(userId);
+  }
+
+  async updateStripeInfo(userId: string, info: { stripeCustomerId?: string; stripeSubscriptionId?: string | null }): Promise<User> {
+    const [user] = await db.update(users).set(info).where(eq(users.id, userId)).returning();
+    return user;
+  }
+
+  async incrementResumeParses(userId: string): Promise<void> {
+    await db.update(users)
+      .set({ resumeParsesThisPeriod: sql`COALESCE(${users.resumeParsesThisPeriod}, 0) + 1` })
+      .where(eq(users.id, userId));
+  }
+
+  async incrementAutofills(userId: string): Promise<void> {
+    await db.update(users)
+      .set({ autofillsThisPeriod: sql`COALESCE(${users.autofillsThisPeriod}, 0) + 1` })
+      .where(eq(users.id, userId));
+  }
+
+  async resetUsageIfNeeded(userId: string): Promise<void> {
+    const user = await this.getUser(userId);
+    if (!user?.periodStart) return;
+
+    const now = new Date();
+    const periodStart = new Date(user.periodStart);
+    const daysSincePeriodStart = Math.floor((now.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysSincePeriodStart >= PERIOD_DAYS) {
+      await db.update(users).set({
+        resumeParsesThisPeriod: 0,
+        autofillsThisPeriod: 0,
+        periodStart: now
+      }).where(eq(users.id, userId));
+    }
+  }
+
+  async canParseResume(userId: string): Promise<{ allowed: boolean; remaining: number; isPremium: boolean }> {
+    await this.resetUsageIfNeeded(userId);
+    const user = await this.getUser(userId);
+    if (!user) return { allowed: false, remaining: 0, isPremium: false };
+
+    const isPremium = !!user.stripeSubscriptionId;
+    if (isPremium) return { allowed: true, remaining: -1, isPremium: true };
+
+    const used = user.resumeParsesThisPeriod || 0;
+    const remaining = FREE_TIER_RESUME_LIMIT - used;
+    return { allowed: remaining > 0, remaining, isPremium: false };
+  }
+
+  async canAutofill(userId: string): Promise<{ allowed: boolean; remaining: number; isPremium: boolean }> {
+    await this.resetUsageIfNeeded(userId);
+    const user = await this.getUser(userId);
+    if (!user) return { allowed: false, remaining: 0, isPremium: false };
+
+    const isPremium = !!user.stripeSubscriptionId;
+    if (isPremium) return { allowed: true, remaining: -1, isPremium: true };
+
+    const used = user.autofillsThisPeriod || 0;
+    const remaining = FREE_TIER_AUTOFILL_LIMIT - used;
+    return { allowed: remaining > 0, remaining, isPremium: false };
+  }
+
+  async getSubscription(subscriptionId: string) {
+    const result = await db.execute(
+      sql`SELECT * FROM stripe.subscriptions WHERE id = ${subscriptionId}`
+    );
+    return result.rows[0] || null;
+  }
+
+  async listProducts() {
+    const result = await db.execute(
+      sql`SELECT * FROM stripe.products WHERE active = true`
+    );
+    return result.rows;
+  }
+
+  async listPrices() {
+    const result = await db.execute(
+      sql`SELECT * FROM stripe.prices WHERE active = true`
+    );
+    return result.rows;
+  }
+
+  async getProduct(productId: string) {
+    const result = await db.execute(
+      sql`SELECT * FROM stripe.products WHERE id = ${productId}`
+    );
+    return result.rows[0] || null;
   }
 }
 

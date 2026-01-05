@@ -14,6 +14,11 @@ export const users = pgTable("users", {
   linkedin: text("linkedin"),
   portfolio: text("portfolio"),
   phone: text("phone"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  resumeParsesThisPeriod: integer("resume_parses_this_period").default(0),
+  autofillsThisPeriod: integer("autofills_this_period").default(0),
+  periodStart: timestamp("period_start").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

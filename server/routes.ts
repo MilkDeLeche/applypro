@@ -5,21 +5,10 @@ import { api, errorSchemas } from "@shared/routes";
 import { z } from "zod";
 import { setupAuth, registerAuthRoutes } from "./auth";
 import multer from "multer";
-// pdf-parse import (handle ESM/CJS compatibility)
 import * as pdfParseModule from "pdf-parse";
 import fs from "fs";
 import { OpenAI } from "openai";
-
-// Setup OpenAI (Replit integration handles the key if using the blueprint)
-// But for "blueprint:javascript_openai_ai_integrations", it uses REPLIT_AI_...
-// We can use the standard OpenAI SDK but we need to check how Replit injects it.
-// Actually, with the blueprint, it might just set OPENAI_API_KEY if we use the standard one?
-// No, the blueprint says "internally uses Replit AI Integrations... provides OpenAI-compatible API access".
-// Usually this means we don't need to do much if we use the right endpoint/config, 
-// OR it sets the env vars.
-// The safe bet is to assume standard OpenAI SDK works if the blueprint sets the env vars.
-// If not, we might need to configure the base URL.
-// Replit AI usually sets OPENAI_API_KEY to a special token and base URL.
+import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 
 const upload = multer({ dest: '/tmp/uploads/' });
 
@@ -63,14 +52,23 @@ export async function registerRoutes(
       return res.status(400).json({ message: "No file uploaded" });
     }
 
+    const userId = getUserId(req);
+
+    const usageCheck = await storage.canParseResume(userId);
+    if (!usageCheck.allowed) {
+      return res.status(403).json({ 
+        message: "Free tier limit reached. Upgrade to Pro for unlimited resume parsing.",
+        remaining: usageCheck.remaining,
+        isPremium: usageCheck.isPremium
+      });
+    }
+
     try {
-      // Ensure uploads directory exists
       if (!fs.existsSync('/tmp/uploads')) {
         fs.mkdirSync('/tmp/uploads', { recursive: true });
       }
       
       const dataBuffer = fs.readFileSync(req.file.path);
-      // Use the PDFParse class from pdf-parse module
       const parser = new (pdfParseModule as any).PDFParse({ data: dataBuffer });
       const pdfData = await parser.getText();
       const text = pdfData.text;
@@ -135,6 +133,8 @@ export async function registerRoutes(
 
       const profile = await storage.updateProfileWithParsedData(userId, updateData);
       
+      await storage.incrementResumeParses(userId);
+      
       res.json({ message: "Resume parsed successfully", profile });
 
     } catch (error: any) {
@@ -166,6 +166,134 @@ export async function registerRoutes(
   app.delete(api.education.delete.path, requireAuth, async (req, res) => {
     await storage.deleteEducation(Number(req.params.id));
     res.status(204).send();
+  });
+
+  app.get('/api/usage', requireAuth, async (req, res) => {
+    const userId = getUserId(req);
+    const user = await storage.getUser(userId);
+    const resumeUsage = await storage.canParseResume(userId);
+    const autofillUsage = await storage.canAutofill(userId);
+    
+    res.json({
+      isPremium: !!user?.stripeSubscriptionId,
+      resumeParses: {
+        used: user?.resumeParsesThisPeriod || 0,
+        remaining: resumeUsage.remaining,
+        limit: resumeUsage.isPremium ? -1 : 3
+      },
+      autofills: {
+        used: user?.autofillsThisPeriod || 0,
+        remaining: autofillUsage.remaining,
+        limit: autofillUsage.isPremium ? -1 : 10
+      }
+    });
+  });
+
+  app.get('/api/autofill-data', requireAuth, async (req, res) => {
+    const userId = getUserId(req);
+    const usageCheck = await storage.canAutofill(userId);
+    
+    if (!usageCheck.allowed) {
+      return res.status(403).json({ 
+        message: "Free tier limit reached. Upgrade to Pro for unlimited autofills.",
+        remaining: usageCheck.remaining
+      });
+    }
+    
+    const profile = await storage.getProfile(userId);
+    await storage.incrementAutofills(userId);
+    
+    res.json(profile);
+  });
+
+  app.get('/api/stripe/publishable-key', async (req, res) => {
+    try {
+      const key = await getStripePublishableKey();
+      res.json({ publishableKey: key });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get Stripe key' });
+    }
+  });
+
+  app.post('/api/checkout', requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      const stripe = await getUncachableStripeClient();
+      
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email || undefined,
+          metadata: { userId }
+        });
+        await storage.updateStripeInfo(userId, { stripeCustomerId: customer.id });
+        customerId = customer.id;
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'SudoFillr Pro',
+              description: 'Unlimited resume parsing and autofills for 1 year'
+            },
+            unit_amount: 2500,
+            recurring: { interval: 'year' }
+          },
+          quantity: 1
+        }],
+        mode: 'subscription',
+        success_url: `${req.protocol}://${req.get('host')}/dashboard?success=true`,
+        cancel_url: `${req.protocol}://${req.get('host')}/pricing?canceled=true`,
+      });
+
+      res.json({ url: session.url });
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+      res.status(500).json({ error: 'Failed to create checkout session' });
+    }
+  });
+
+  app.get('/api/subscription', requireAuth, async (req, res) => {
+    const userId = getUserId(req);
+    const user = await storage.getUser(userId);
+    
+    if (!user?.stripeSubscriptionId) {
+      return res.json({ subscription: null });
+    }
+
+    const subscription = await storage.getSubscription(user.stripeSubscriptionId);
+    res.json({ subscription });
+  });
+
+  app.post('/api/billing-portal', requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const user = await storage.getUser(userId);
+      
+      if (!user?.stripeCustomerId) {
+        return res.status(400).json({ error: 'No billing account found' });
+      }
+
+      const stripe = await getUncachableStripeClient();
+      const session = await stripe.billingPortal.sessions.create({
+        customer: user.stripeCustomerId,
+        return_url: `${req.protocol}://${req.get('host')}/dashboard`,
+      });
+
+      res.json({ url: session.url });
+    } catch (error: any) {
+      console.error('Billing portal error:', error);
+      res.status(500).json({ error: 'Failed to create billing portal session' });
+    }
   });
 
   return httpServer;

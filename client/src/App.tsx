@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import Dashboard from "@/pages/Dashboard";
 import Landing from "@/pages/Landing";
 import ExtensionGuide from "@/pages/ExtensionGuide";
+import Pricing from "@/pages/pricing";
 import NotFound from "@/pages/not-found";
 
 function LoadingSpinner() {
@@ -33,6 +34,14 @@ function AppContent() {
       <Switch>
         <Route path="/extension">
           {user ? <ExtensionGuide /> : <Landing />}
+        </Route>
+        
+        <Route path="/pricing">
+          <Pricing />
+        </Route>
+        
+        <Route path="/dashboard">
+          {user ? <Dashboard /> : <Landing />}
         </Route>
         
         <Route path="/">
