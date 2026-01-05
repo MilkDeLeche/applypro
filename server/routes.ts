@@ -5,7 +5,7 @@ import { api, errorSchemas } from "@shared/routes";
 import { z } from "zod";
 import { setupAuth, registerAuthRoutes } from "./auth";
 import multer from "multer";
-import * as pdfParseModule from "pdf-parse";
+import { PDFParse } from "pdf-parse";
 import fs from "fs";
 import { OpenAI } from "openai";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
@@ -69,9 +69,10 @@ export async function registerRoutes(
       }
       
       const dataBuffer = fs.readFileSync(req.file.path);
-      const parser = new (pdfParseModule as any).PDFParse({ data: dataBuffer });
+      const parser = new PDFParse({ data: dataBuffer });
       const pdfData = await parser.getText();
       const text = pdfData.text;
+      await parser.destroy();
 
       // Clean up file
       fs.unlinkSync(req.file.path);
@@ -387,6 +388,36 @@ export async function registerRoutes(
 
     const subscription = await storage.getSubscription(user.stripeSubscriptionId);
     res.json({ subscription });
+  });
+
+  // Clear profile data (experience, education, and user profile fields)
+  app.post('/api/profile/clear', requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      await storage.clearProfileData(userId);
+      res.json({ message: 'Profile data cleared successfully' });
+    } catch (error: any) {
+      console.error('Clear profile error:', error);
+      res.status(500).json({ message: 'Failed to clear profile data' });
+    }
+  });
+
+  // Delete account entirely
+  app.delete('/api/account', requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      await storage.deleteAccount(userId);
+      
+      // Destroy session
+      req.logout((err) => {
+        if (err) console.error('Logout error:', err);
+      });
+      
+      res.json({ message: 'Account deleted successfully' });
+    } catch (error: any) {
+      console.error('Delete account error:', error);
+      res.status(500).json({ message: 'Failed to delete account' });
+    }
   });
 
   app.post('/api/billing-portal', requireAuth, async (req, res) => {

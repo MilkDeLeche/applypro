@@ -271,3 +271,48 @@ export function useActivateProfile() {
     },
   });
 }
+
+export function useClearProfileData() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/profile/clear', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to clear profile data');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.profile.get.path] });
+      toast({ title: 'Cleared', description: 'Profile data has been reset. Upload a new resume to start fresh.' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
+export function useDeleteAccount() {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/account', {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to delete account');
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Account Deleted', description: 'Your account has been permanently deleted.' });
+      window.location.href = '/';
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+}

@@ -289,6 +289,50 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db.update(users).set({ subscriptionTier: tier }).where(eq(users.id, userId)).returning();
     return user;
   }
+
+  async clearProfileData(userId: string): Promise<void> {
+    const user = await this.getUser(userId);
+    if (!user) return;
+
+    // Get user's active profile
+    const activeProfileId = user.activeProfileId;
+    if (activeProfileId) {
+      // Delete all experience and education for the active profile
+      await db.delete(experience).where(eq(experience.profileId, activeProfileId));
+      await db.delete(education).where(eq(education.profileId, activeProfileId));
+    }
+
+    // Clear user's personal info fields (but keep account)
+    await db.update(users).set({
+      firstName: null,
+      lastName: null,
+      phone: null,
+      linkedin: null,
+      portfolio: null,
+      address: null,
+      city: null,
+      state: null,
+      zip: null,
+      country: null
+    }).where(eq(users.id, userId));
+  }
+
+  async deleteAccount(userId: string): Promise<void> {
+    // Get all user's profiles
+    const userProfiles = await this.getProfiles(userId);
+    
+    // Delete all experience and education for each profile
+    for (const profile of userProfiles) {
+      await db.delete(experience).where(eq(experience.profileId, profile.id));
+      await db.delete(education).where(eq(education.profileId, profile.id));
+    }
+    
+    // Delete all profiles
+    await db.delete(profiles).where(eq(profiles.userId, userId));
+    
+    // Delete the user
+    await db.delete(users).where(eq(users.id, userId));
+  }
 }
 
 export const storage = new DatabaseStorage();
