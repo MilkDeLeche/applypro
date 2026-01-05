@@ -20,7 +20,7 @@ export default function Dashboard() {
     return <DashboardSkeleton />;
   }
 
-  if (!data) return null;
+  if (!data?.user) return null;
 
   return (
     <div className="min-h-screen bg-muted/30 pb-20">
