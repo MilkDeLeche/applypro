@@ -321,6 +321,30 @@ function EditProfileDialog({ user }: { user: any }) {
             <Label htmlFor="portfolio">Portfolio URL</Label>
             <Input id="portfolio" {...register("portfolio")} />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="address">Street Address</Label>
+            <Input id="address" {...register("address")} placeholder="123 Main St" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="city">City</Label>
+              <Input id="city" {...register("city")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="state">State</Label>
+              <Input id="state" {...register("state")} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="zip">ZIP Code</Label>
+              <Input id="zip" {...register("zip")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="country">Country</Label>
+              <Input id="country" {...register("country")} />
+            </div>
+          </div>
           <div className="flex justify-end pt-4">
             <Button type="submit" disabled={isPending}>
               {isPending ? "Saving..." : "Save Changes"}
