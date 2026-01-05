@@ -5,7 +5,8 @@ import { api, errorSchemas } from "@shared/routes";
 import { z } from "zod";
 import { setupAuth } from "./auth";
 import multer from "multer";
-import pdfParse from "pdf-parse";
+import * as pdfParseModule from "pdf-parse";
+const pdfParse = (pdfParseModule as any).default || pdfParseModule;
 import fs from "fs";
 import { OpenAI } from "openai";
 
@@ -27,7 +28,7 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   // Auth setup
-  setupAuth(app);
+  await setupAuth(app);
 
   const requireAuth = (req: any, res: any, next: any) => {
     if (!req.isAuthenticated()) {
