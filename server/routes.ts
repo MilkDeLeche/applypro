@@ -5,7 +5,7 @@ import { api, errorSchemas } from "@shared/routes";
 import { z } from "zod";
 import { setupAuth } from "./auth";
 import multer from "multer";
-import * as pdfParse from "pdf-parse";
+import pdfParse from "pdf-parse";
 import fs from "fs";
 import { OpenAI } from "openai";
 
