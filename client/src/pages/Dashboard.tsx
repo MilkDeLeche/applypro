@@ -102,9 +102,13 @@ export default function Dashboard() {
                     </div>
                     <div className="overflow-hidden">
                       <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">LinkedIn</p>
-                      <a href={data.user.linkedin || "#"} target="_blank" className="truncate font-medium text-primary hover:underline block">
-                        {data.user.linkedin || "Not set"}
-                      </a>
+                      {data.user.linkedin ? (
+                        <a href={data.user.linkedin} target="_blank" rel="noopener noreferrer" className="truncate font-medium text-primary hover:underline block">
+                          {data.user.linkedin}
+                        </a>
+                      ) : (
+                        <p className="text-muted-foreground italic">Click "Edit Profile" to add</p>
+                      )}
                     </div>
                   </div>
 
@@ -114,9 +118,13 @@ export default function Dashboard() {
                     </div>
                     <div className="overflow-hidden">
                       <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Portfolio</p>
-                      <a href={data.user.portfolio || "#"} target="_blank" className="truncate font-medium text-primary hover:underline block">
-                        {data.user.portfolio || "Not set"}
-                      </a>
+                      {data.user.portfolio ? (
+                        <a href={data.user.portfolio} target="_blank" rel="noopener noreferrer" className="truncate font-medium text-primary hover:underline block">
+                          {data.user.portfolio}
+                        </a>
+                      ) : (
+                        <p className="text-muted-foreground italic">Click "Edit Profile" to add</p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
