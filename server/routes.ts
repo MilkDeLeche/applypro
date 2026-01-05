@@ -67,7 +67,7 @@ export async function registerRoutes(
       // Dynamically import pdf-parse (CommonJS compatibility)
       if (!pdfParse) {
         const pdfModule = await import("pdf-parse");
-        pdfParse = pdfModule.default || pdfModule;
+        pdfParse = pdfModule.PDFParse || pdfModule.default || pdfModule;
       }
       
       const dataBuffer = fs.readFileSync(req.file.path);
