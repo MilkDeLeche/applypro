@@ -71,8 +71,11 @@ export async function registerRoutes(
       // Clean up file
       fs.unlinkSync(req.file.path);
 
-      // AI Parsing
-      const openai = new OpenAI(); // Expects OPENAI_API_KEY from environment (provided by Replit AI)
+      // AI Parsing - use Replit AI Integration
+      const openai = new OpenAI({
+        apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+        baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      });
       
       const prompt = `
         You are a resume parser. Extract the following information from the resume text below and return it in JSON format.
@@ -92,8 +95,9 @@ export async function registerRoutes(
 
       const completion = await openai.chat.completions.create({
         messages: [{ role: "user", content: prompt }],
-        model: "gpt-4o", // or generic model
+        model: "gpt-4o",
         response_format: { type: "json_object" },
+        max_completion_tokens: 8192,
       });
 
       const parsedData = JSON.parse(completion.choices[0].message.content || "{}");
