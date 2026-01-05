@@ -5,8 +5,8 @@ import { api, errorSchemas } from "@shared/routes";
 import { z } from "zod";
 import { setupAuth, registerAuthRoutes } from "./auth";
 import multer from "multer";
-import * as pdfParseModule from "pdf-parse";
-const pdfParse = (pdfParseModule as any).default || pdfParseModule;
+// Dynamic import for pdf-parse (CommonJS module)
+let pdfParse: any;
 import fs from "fs";
 import { OpenAI } from "openai";
 
@@ -64,6 +64,12 @@ export async function registerRoutes(
     }
 
     try {
+      // Dynamically import pdf-parse (CommonJS compatibility)
+      if (!pdfParse) {
+        const pdfModule = await import("pdf-parse");
+        pdfParse = pdfModule.default || pdfModule;
+      }
+      
       const dataBuffer = fs.readFileSync(req.file.path);
       const pdfData = await pdfParse(dataBuffer);
       const text = pdfData.text;
