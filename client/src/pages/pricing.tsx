@@ -70,7 +70,7 @@ export default function Pricing() {
           <Card>
             <CardHeader>
               <CardTitle>Free</CardTitle>
-              <CardDescription>Perfect for trying out SudoFillr</CardDescription>
+              <CardDescription>Try it out and see how it works</CardDescription>
               <div className="text-3xl font-bold mt-4">$0</div>
             </CardHeader>
             <CardContent>
@@ -81,15 +81,15 @@ export default function Pricing() {
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span>3 resume parses per month</span>
+                  <span>Upload up to 3 resumes per month</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span>10 form autofills per month</span>
+                  <span>Fill 10 job applications per month</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span>Chrome extension access</span>
+                  <span>Chrome extension included</span>
                 </li>
               </ul>
             </CardContent>
@@ -108,7 +108,7 @@ export default function Pricing() {
           <Card>
             <CardHeader>
               <CardTitle>Standard</CardTitle>
-              <CardDescription>For active job seekers</CardDescription>
+              <CardDescription>Apply to as many jobs as you want</CardDescription>
               <div className="mt-4">
                 <span className="text-3xl font-bold">$35</span>
                 <span className="text-muted-foreground">/year</span>
@@ -122,15 +122,15 @@ export default function Pricing() {
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span>Unlimited resume parses</span>
+                  <span>Unlimited resume uploads</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span>Unlimited form autofills</span>
+                  <span>Fill unlimited job applications</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span>Priority AI processing</span>
+                  <span>Faster resume processing</span>
                 </li>
               </ul>
             </CardContent>
@@ -153,7 +153,7 @@ export default function Pricing() {
             </div>
             <CardHeader>
               <CardTitle>Pro</CardTitle>
-              <CardDescription>For serious job seekers</CardDescription>
+              <CardDescription>Perfect for applying to different job types</CardDescription>
               <div className="mt-4">
                 <span className="text-3xl font-bold">$45</span>
                 <span className="text-muted-foreground">/year</span>
@@ -163,19 +163,19 @@ export default function Pricing() {
               <ul className="space-y-3">
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span className="font-medium">5 resume profiles</span>
+                  <span className="font-medium">5 different resume profiles</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span>Unlimited resume parses</span>
+                  <span>Unlimited resume uploads</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span>Unlimited form autofills</span>
+                  <span>Fill unlimited job applications</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span>Quick-switch between profiles</span>
+                  <span>Switch profiles with one click</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
@@ -199,7 +199,7 @@ export default function Pricing() {
 
         <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground mb-2">
-            Pro is perfect for applying to different types of jobs - create separate resumes for IT, Customer Service, Sales, and more!
+            With Pro, create separate profiles for different industries like Tech, Sales, or Customer Service - and fill each application with the right info!
           </p>
         </div>
 
