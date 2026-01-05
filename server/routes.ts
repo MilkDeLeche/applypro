@@ -5,10 +5,8 @@ import { api, errorSchemas } from "@shared/routes";
 import { z } from "zod";
 import { setupAuth, registerAuthRoutes } from "./auth";
 import multer from "multer";
-// pdf-parse import (CommonJS module)
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
+// pdf-parse import (handle ESM/CJS compatibility)
+import * as pdfParseModule from "pdf-parse";
 import fs from "fs";
 import { OpenAI } from "openai";
 
@@ -72,7 +70,9 @@ export async function registerRoutes(
       }
       
       const dataBuffer = fs.readFileSync(req.file.path);
-      const pdfData = await pdfParse.PDFParse(dataBuffer);
+      // Use the PDFParse class from pdf-parse module
+      const parser = new (pdfParseModule as any).PDFParse({ data: dataBuffer });
+      const pdfData = await parser.getText();
       const text = pdfData.text;
 
       // Clean up file
