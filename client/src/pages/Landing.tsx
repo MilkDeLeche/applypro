@@ -46,6 +46,19 @@ export default function Landing() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.5 }}
+            className="inline-flex items-center gap-3 px-6 py-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20"
+            data-testid="welcome-message"
+          >
+            <ShieldCheck className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+            <span className="text-emerald-700 dark:text-emerald-400 font-medium">
+              {t("landing.hero.welcome")} <span className="text-muted-foreground font-normal">{t("landing.hero.welcome.secondary")}</span>
+            </span>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
           >
