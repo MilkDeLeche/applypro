@@ -7,21 +7,21 @@ import {
 import { eq } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, updates: Partial<InsertUser>): Promise<User>;
+  updateUser(id: string, updates: Partial<InsertUser>): Promise<User>;
 
-  getProfile(userId: number): Promise<UserProfile>;
+  getProfile(userId: string): Promise<UserProfile>;
   
-  createExperience(userId: number, exp: Omit<InsertExperience, "userId">): Promise<Experience>;
+  createExperience(userId: string, exp: Omit<InsertExperience, "userId">): Promise<Experience>;
   deleteExperience(id: number): Promise<void>;
   
-  createEducation(userId: number, edu: Omit<InsertEducation, "userId">): Promise<Education>;
+  createEducation(userId: string, edu: Omit<InsertEducation, "userId">): Promise<Education>;
   deleteEducation(id: number): Promise<void>;
   
   // For AI parsing overwrite
-  updateProfileWithParsedData(userId: number, data: {
+  updateProfileWithParsedData(userId: string, data: {
     user: Partial<InsertUser>,
     experience: Omit<InsertExperience, "userId">[],
     education: Omit<InsertEducation, "userId">[]
@@ -29,7 +29,7 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
@@ -44,24 +44,24 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUser(id: number, updates: Partial<InsertUser>): Promise<User> {
+  async updateUser(id: string, updates: Partial<InsertUser>): Promise<User> {
     const [user] = await db.update(users).set(updates).where(eq(users.id, id)).returning();
     return user;
   }
 
-  async getProfile(userId: number): Promise<UserProfile> {
+  async getProfile(userId: string): Promise<UserProfile> {
     const [user] = await db.select().from(users).where(eq(users.id, userId));
     const userExperience = await db.select().from(experience).where(eq(experience.userId, userId));
     const userEducation = await db.select().from(education).where(eq(education.userId, userId));
     
     return {
-      ...user,
+      user,
       experience: userExperience,
       education: userEducation
     };
   }
 
-  async createExperience(userId: number, exp: Omit<InsertExperience, "userId">): Promise<Experience> {
+  async createExperience(userId: string, exp: Omit<InsertExperience, "userId">): Promise<Experience> {
     const [newExp] = await db.insert(experience).values({ ...exp, userId }).returning();
     return newExp;
   }
@@ -70,7 +70,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(experience).where(eq(experience.id, id));
   }
 
-  async createEducation(userId: number, edu: Omit<InsertEducation, "userId">): Promise<Education> {
+  async createEducation(userId: string, edu: Omit<InsertEducation, "userId">): Promise<Education> {
     const [newEdu] = await db.insert(education).values({ ...edu, userId }).returning();
     return newEdu;
   }
@@ -79,7 +79,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(education).where(eq(education.id, id));
   }
 
-  async updateProfileWithParsedData(userId: number, data: {
+  async updateProfileWithParsedData(userId: string, data: {
     user: Partial<InsertUser>,
     experience: Omit<InsertExperience, "userId">[],
     education: Omit<InsertEducation, "userId">[]
@@ -90,8 +90,6 @@ export class DatabaseStorage implements IStorage {
     }
     
     // Clear existing and add new (simple approach for "overwrite with resume")
-    // Or we could append. The prompt says "parse it into a database", usually implies "this is my current resume".
-    // I'll clear and replace for simplicity in this MVP.
     await db.delete(experience).where(eq(experience.userId, userId));
     await db.delete(education).where(eq(education.userId, userId));
     

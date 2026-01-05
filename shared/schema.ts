@@ -77,7 +77,8 @@ export type InsertEducation = z.infer<typeof insertEducationSchema>;
 
 // === API CONTRACT TYPES ===
 
-export type UserProfile = User & {
+export type UserProfile = {
+  user: User;
   experience: Experience[];
   education: Education[];
 };

@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api, errorSchemas } from "@shared/routes";
 import { z } from "zod";
-import { setupAuth } from "./auth";
+import { setupAuth, registerAuthRoutes } from "./auth";
 import multer from "multer";
 import * as pdfParseModule from "pdf-parse";
 const pdfParse = (pdfParseModule as any).default || pdfParseModule;
@@ -29,6 +29,7 @@ export async function registerRoutes(
 ): Promise<Server> {
   // Auth setup
   await setupAuth(app);
+  registerAuthRoutes(app);
 
   const requireAuth = (req: any, res: any, next: any) => {
     if (!req.isAuthenticated()) {
@@ -36,18 +37,21 @@ export async function registerRoutes(
     }
     next();
   };
+  
+  // Helper to get user ID from session claims
+  const getUserId = (req: any): string => req.user.claims.sub;
 
   app.get(api.profile.get.path, requireAuth, async (req, res) => {
-    const user = req.user as any;
-    const profile = await storage.getProfile(user.id);
+    const userId = getUserId(req);
+    const profile = await storage.getProfile(userId);
     res.json(profile);
   });
 
   app.put(api.profile.update.path, requireAuth, async (req, res) => {
     try {
       const input = api.profile.update.input.parse(req.body);
-      const user = req.user as any;
-      const updated = await storage.updateUser(user.id, input);
+      const userId = getUserId(req);
+      const updated = await storage.updateUser(userId, input);
       res.json(updated);
     } catch (err) {
       res.status(400).json({ message: "Validation error" });
@@ -94,7 +98,7 @@ export async function registerRoutes(
 
       const parsedData = JSON.parse(completion.choices[0].message.content || "{}");
       
-      const user = req.user as any;
+      const userId = getUserId(req);
 
       // Map parsed data to our schema structure
       const updateData = {
@@ -109,7 +113,7 @@ export async function registerRoutes(
         education: parsedData.education || []
       };
 
-      const profile = await storage.updateProfileWithParsedData(user.id, updateData);
+      const profile = await storage.updateProfileWithParsedData(userId, updateData);
       
       res.json({ message: "Resume parsed successfully", profile });
 
@@ -121,8 +125,8 @@ export async function registerRoutes(
 
   app.post(api.experience.create.path, requireAuth, async (req, res) => {
     const input = api.experience.create.input.parse(req.body);
-    const user = req.user as any;
-    const exp = await storage.createExperience(user.id, input);
+    const userId = getUserId(req);
+    const exp = await storage.createExperience(userId, input);
     res.status(201).json(exp);
   });
 
@@ -134,8 +138,8 @@ export async function registerRoutes(
   // Education routes similar...
   app.post(api.education.create.path, requireAuth, async (req, res) => {
     const input = api.education.create.input.parse(req.body);
-    const user = req.user as any;
-    const edu = await storage.createEducation(user.id, input);
+    const userId = getUserId(req);
+    const edu = await storage.createEducation(userId, input);
     res.status(201).json(edu);
   });
 
