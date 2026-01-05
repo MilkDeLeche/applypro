@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Chrome, Puzzle, Settings, Copy, Check } from "lucide-react";
+import { Chrome, Puzzle, Settings, Copy, Check, Monitor } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 
@@ -48,6 +48,10 @@ export default function ExtensionGuide() {
             Add our browser extension to start autofilling job applications instantly.
             Just 3 simple steps to get started.
           </p>
+          <div className="flex items-center justify-center gap-2 mt-4 text-sm text-muted-foreground bg-muted/50 px-4 py-2 rounded-full w-fit mx-auto">
+            <Monitor className="w-4 h-4" />
+            <span>Desktop browsers only (Chrome, Edge, Brave)</span>
+          </div>
         </div>
 
         <div className="grid gap-6">
