@@ -2,8 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Zap, ShieldCheck, MousePointerClick, ArrowRight, Lock, Trash2, Globe, Ban } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 export default function Landing() {
+  const { t } = useI18n();
+  
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
       {/* Background Decor */}
@@ -27,8 +30,8 @@ export default function Landing() {
             transition={{ delay: 0.1, duration: 0.5 }}
             className="text-5xl md:text-7xl font-bold font-display tracking-tight text-foreground"
           >
-            Stop typing. <br />
-            Start <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-violet-600">applying.</span>
+            {t("landing.hero.title")} <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-violet-600">{t("landing.hero.highlight")}</span>
           </motion.h1>
           
           <motion.p
@@ -37,7 +40,7 @@ export default function Landing() {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
           >
-            Upload your resume once. SudoFillr's smart extension autofills tedious job application forms with 99% accuracy using GPT-4o.
+            {t("landing.hero.subtitle")}
           </motion.p>
           
           <motion.div
@@ -52,7 +55,7 @@ export default function Landing() {
               className="w-full sm:w-auto text-lg h-14 px-8"
               onClick={() => window.location.href = "/api/login"}
             >
-              Get Started for Free <ArrowRight className="ml-2 w-5 h-5" />
+              {t("landing.hero.cta")} <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
             <Button 
               size="lg" 
@@ -75,18 +78,18 @@ export default function Landing() {
         >
           <FeatureCard 
             icon={<MousePointerClick className="w-8 h-8 text-primary" />}
-            title="One-Click Fill"
-            description="Our Chrome extension detects application forms and fills them instantly."
+            title={t("landing.features.autofill.title")}
+            description={t("landing.features.autofill.desc")}
           />
           <FeatureCard 
             icon={<Zap className="w-8 h-8 text-violet-500" />}
-            title="AI Parsing"
-            description="We use advanced LLMs to extract every detail from your PDF resume correctly."
+            title={t("landing.features.ai.title")}
+            description={t("landing.features.ai.desc")}
           />
           <FeatureCard 
             icon={<ShieldCheck className="w-8 h-8 text-emerald-500" />}
-            title="Privacy First"
-            description="Your data is stored securely and never shared with third parties."
+            title={t("landing.features.privacy.title")}
+            description={t("landing.features.privacy.desc")}
           />
         </motion.div>
 
@@ -101,36 +104,36 @@ export default function Landing() {
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm font-medium border border-emerald-500/20 mb-4">
               <Lock className="w-4 h-4" />
-              <span>Your Data, Your Control</span>
+              <span>{t("privacy.badge")}</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-bold font-display text-foreground mb-4">
-              Privacy is our <span className="text-emerald-500">promise</span>
+              {t("privacy.title")} <span className="text-emerald-500">{t("privacy.highlight")}</span>
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Unlike other autofill tools that monetize your data, SudoFillr keeps your information completely private.
+              {t("privacy.subtitle")}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <PrivacyCard 
               icon={<Ban className="w-6 h-6 text-red-500" />}
-              title="Never Sold"
-              description="We never sell, share, or monetize your personal data. Ever."
+              title={t("privacy.never_sold.title")}
+              description={t("privacy.never_sold.desc")}
             />
             <PrivacyCard 
               icon={<Trash2 className="w-6 h-6 text-orange-500" />}
-              title="Delete Anytime"
-              description="One-click to permanently delete all your data from our servers."
+              title={t("privacy.delete.title")}
+              description={t("privacy.delete.desc")}
             />
             <PrivacyCard 
               icon={<Lock className="w-6 h-6 text-emerald-500" />}
-              title="Encrypted Storage"
-              description="Your resume data is encrypted at rest and in transit."
+              title={t("privacy.encrypted.title")}
+              description={t("privacy.encrypted.desc")}
             />
             <PrivacyCard 
               icon={<Globe className="w-6 h-6 text-violet-500" />}
-              title="LATAM Support"
-              description="Full support for Mexican and Chilean CV formats with local autofill."
+              title={t("privacy.latam.title")}
+              description={t("privacy.latam.desc")}
             />
           </div>
         </motion.section>

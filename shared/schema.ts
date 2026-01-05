@@ -52,6 +52,8 @@ export const users = pgTable("users", {
   activeProfileId: integer("active_profile_id"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  mercadopagoSubscriptionId: text("mercadopago_subscription_id"),
+  paymentProvider: text("payment_provider"),
   resumeParsesThisPeriod: integer("resume_parses_this_period").default(0),
   autofillsThisPeriod: integer("autofills_this_period").default(0),
   periodStart: timestamp("period_start").defaultNow(),

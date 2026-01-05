@@ -9,6 +9,12 @@ import { PDFParse } from "pdf-parse";
 import fs from "fs";
 import { OpenAI } from "openai";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
+import { 
+  createMercadoPagoSubscription, 
+  isMercadoPagoConfigured, 
+  MERCADOPAGO_PRICING,
+  type MercadoPagoCountry 
+} from "./mercadopagoClient";
 
 const upload = multer({ dest: '/tmp/uploads/' });
 
@@ -528,6 +534,74 @@ export async function registerRoutes(
       console.error('Billing portal error:', error);
       res.status(500).json({ error: 'Failed to create billing portal session' });
     }
+  });
+
+  // Mercado Pago checkout for LATAM users
+  app.post('/api/mercadopago/checkout', requireAuth, async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const { tier, country } = req.body;
+      
+      if (!['mx', 'cl'].includes(country)) {
+        return res.status(400).json({ error: 'Mercado Pago only available for Mexico (mx) and Chile (cl)' });
+      }
+      
+      if (!isMercadoPagoConfigured(country as MercadoPagoCountry)) {
+        return res.status(503).json({ error: 'Mercado Pago not configured for this country' });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      const backUrl = `${req.protocol}://${req.get('host')}/dashboard?success=true`;
+      
+      const subscription = await createMercadoPagoSubscription({
+        country: country as MercadoPagoCountry,
+        tier: tier || 'standard',
+        payerEmail: user.email || '',
+        externalReference: `${userId}:${tier || 'standard'}`,
+        backUrl
+      });
+      
+      res.json({ 
+        url: subscription.init_point,
+        subscriptionId: subscription.id 
+      });
+    } catch (error: any) {
+      console.error('Mercado Pago checkout error:', error);
+      res.status(500).json({ error: 'Failed to create Mercado Pago subscription' });
+    }
+  });
+
+  // Get available payment providers based on country
+  app.get('/api/payment-providers', async (req, res) => {
+    const country = (req.query.country as string) || 'us';
+    
+    const providers = {
+      stripe: true, // Always available
+      mercadopago: false
+    };
+    
+    if (country === 'mx' && isMercadoPagoConfigured('mx')) {
+      providers.mercadopago = true;
+    }
+    if (country === 'cl' && isMercadoPagoConfigured('cl')) {
+      providers.mercadopago = true;
+    }
+    
+    const pricing = {
+      us: { standard: 35, pro: 45, currency: 'USD' },
+      mx: { standard: MERCADOPAGO_PRICING.mx.standard.amount, pro: MERCADOPAGO_PRICING.mx.pro.amount, currency: 'MXN' },
+      cl: { standard: MERCADOPAGO_PRICING.cl.standard.amount, pro: MERCADOPAGO_PRICING.cl.pro.amount, currency: 'CLP' },
+      other: { standard: 35, pro: 45, currency: 'USD' }
+    };
+    
+    res.json({
+      providers,
+      pricing: pricing[country as keyof typeof pricing] || pricing.us
+    });
   });
 
   return httpServer;

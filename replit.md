@@ -84,12 +84,29 @@ Preferred communication style: Simple, everyday language.
 - **PostgreSQL**: Primary data store, connection via `DATABASE_URL` environment variable
 - **Drizzle ORM**: Type-safe database queries with schema inference
 
+### Localization & Internationalization
+- **i18n System**: Geo-detection based on timezone and browser language
+- **Supported Locales**: English (en), Mexican Spanish (es-MX), Chilean Spanish (es-CL)
+- **Chilean Flavor**: Uses local expressions like "pega" for jobs, "al tiro" for immediately
+- **Currency Localization**: USD for US, MXN for Mexico, CLP for Chile
+- **Locale File**: `client/src/lib/i18n.tsx` contains all translations
+
+### Payment Providers
+- **Stripe**: Default for US and international users
+- **Mercado Pago**: For Mexico and Chile users (optional, requires configuration)
+- **Pricing**:
+  - US: $35/$45 USD/year (Standard/Pro)
+  - Mexico: $650/$850 MXN/year
+  - Chile: $30,000/$40,000 CLP/year
+
 ### Key Environment Variables Required
 - `DATABASE_URL`: PostgreSQL connection string
 - `SESSION_SECRET`: Secret for session encryption
 - `OPENAI_API_KEY`: For resume parsing AI calls
 - `AI_INTEGRATIONS_OPENAI_API_KEY` / `AI_INTEGRATIONS_OPENAI_BASE_URL`: Replit AI integration
 - Stripe credentials managed via Replit Connectors
+- `MERCADOPAGO_ACCESS_TOKEN_MX`: (Optional) Mercado Pago Mexico credentials
+- `MERCADOPAGO_ACCESS_TOKEN_CL`: (Optional) Mercado Pago Chile credentials
 
 ### Frontend Libraries
 - Radix UI primitives for accessible components

@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { 
@@ -15,14 +16,15 @@ import { useState } from "react";
 export function Navigation() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const { t } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   if (!user) return null;
 
   const navItems = [
-    { href: "/", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/extension", label: "Extension", icon: Puzzle },
-    { href: "/settings", label: "Settings", icon: Settings },
+    { href: "/", label: t("nav.dashboard"), icon: LayoutDashboard },
+    { href: "/extension", label: t("nav.extension"), icon: Puzzle },
+    { href: "/settings", label: t("nav.settings"), icon: Settings },
   ];
 
   return (
@@ -78,7 +80,7 @@ export function Navigation() {
                       data-testid="button-mobile-logout"
                     >
                       <LogOut className="w-5 h-5" />
-                      Sign Out
+                      {t("nav.logout")}
                     </Button>
                   </div>
                 </div>
@@ -122,7 +124,7 @@ export function Navigation() {
               className="hidden md:flex gap-2 text-muted-foreground hover:text-destructive hover:border-destructive/30"
             >
               <LogOut className="w-4 h-4" />
-              Sign Out
+              {t("nav.logout")}
             </Button>
           </div>
         </div>
