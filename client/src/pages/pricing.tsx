@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Globe } from "lucide-react";
+import { Check, Globe, Shield, Trash2, Lock } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -270,7 +270,51 @@ export default function Pricing() {
           </Card>
         </div>
 
-        <div className="mt-8 text-center text-sm text-muted-foreground">
+        {/* Privacy Promise Section */}
+        <div className="mt-16 text-center" data-testid="section-privacy">
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold mb-2" data-testid="text-privacy-tagline">
+              {t("privacy.tagline")}
+            </h2>
+            <p className="text-lg text-muted-foreground mb-8">
+              {t("privacy.subtitle")}
+            </p>
+            
+            <div className="grid md:grid-cols-3 gap-6 text-left">
+              <div className="flex gap-3">
+                <div className="flex-shrink-0">
+                  <Shield className="h-6 w-6 text-green-500" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">{t("privacy.never_sold.title")}</h3>
+                  <p className="text-sm text-muted-foreground">{t("privacy.never_sold.desc")}</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <div className="flex-shrink-0">
+                  <Lock className="h-6 w-6 text-green-500" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">{t("privacy.encrypted.title")}</h3>
+                  <p className="text-sm text-muted-foreground">{t("privacy.encrypted.desc")}</p>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <div className="flex-shrink-0">
+                  <Trash2 className="h-6 w-6 text-green-500" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">{t("privacy.delete.title")}</h3>
+                  <p className="text-sm text-muted-foreground">{t("privacy.delete.desc")}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-12 text-center text-sm text-muted-foreground">
           <p className="mb-2">
             {(country === 'mx' || country === 'cl') && paymentData?.providers.mercadopago 
               ? "Pagos seguros con Mercado Pago" 
