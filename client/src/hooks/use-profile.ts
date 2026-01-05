@@ -226,6 +226,32 @@ export function useRenameProfile() {
   });
 }
 
+export function useUpdateCoverLetter() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, coverLetter }: { id: number; coverLetter: string }) => {
+      const res = await fetch(`/api/profiles/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ coverLetter }),
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to update cover letter');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/profiles'] });
+      queryClient.invalidateQueries({ queryKey: [api.profile.get.path] });
+      toast({ title: 'Saved', description: 'Cover letter saved successfully' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
 export function useDeleteProfile() {
   const queryClient = useQueryClient();
   const { toast } = useToast();

@@ -576,6 +576,40 @@
       }
     }
     
+    // Cover Letter filling
+    const activeProfile = profile.profile || profile;
+    const coverLetter = activeProfile.coverLetter;
+    if (coverLetter) {
+      console.log("SudoFillr: Looking for cover letter fields...");
+      const coverLetterInputs = Array.from(inputs).filter(i => {
+        return i.tagName === 'TEXTAREA' && 
+          matchesField(i, ['coverletter', 'cover_letter', 'cover-letter', 'coverlettertext', 'carta_presentacion', 'carta-presentacion', 'cartapresentacion', 'motivation', 'motivationletter', 'whyhire', 'why_hire', 'about_yourself', 'aboutyourself', 'tell_us', 'tellus']);
+      });
+      
+      // Also check for textareas with common cover letter patterns in labels/placeholders
+      const allTextareas = document.querySelectorAll('textarea:not([disabled]):not([readonly])');
+      allTextareas.forEach(textarea => {
+        const text = getFieldIdentifiers(textarea);
+        if ((text.includes('cover') && text.includes('letter')) ||
+            (text.includes('carta') && text.includes('presentacion')) ||
+            text.includes('why should we hire') ||
+            text.includes('tell us about yourself') ||
+            text.includes('why are you interested') ||
+            text.includes('motivation')) {
+          if (!coverLetterInputs.includes(textarea)) {
+            coverLetterInputs.push(textarea);
+          }
+        }
+      });
+      
+      coverLetterInputs.forEach(textarea => {
+        if (setValue(textarea, coverLetter)) {
+          filledCount++;
+          console.log("SudoFillr: Filled cover letter field");
+        }
+      });
+    }
+    
     console.log(`SudoFillr: Autofill complete! Filled ${filledCount} fields.`);
   }
 })();

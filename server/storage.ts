@@ -24,6 +24,7 @@ export interface IStorage {
   getResumeProfile(profileId: number): Promise<ResumeProfile | null>;
   deleteProfile(profileId: number): Promise<void>;
   renameProfile(profileId: number, name: string): Promise<Profile>;
+  updateProfile(profileId: number, updates: { name?: string; coverLetter?: string | null }): Promise<Profile>;
   setActiveProfile(userId: string, profileId: number): Promise<void>;
   
   createExperience(profileId: number, exp: Omit<InsertExperience, "userId" | "profileId">): Promise<Experience>;
@@ -113,6 +114,11 @@ export class DatabaseStorage implements IStorage {
 
   async renameProfile(profileId: number, name: string): Promise<Profile> {
     const [profile] = await db.update(profiles).set({ name }).where(eq(profiles.id, profileId)).returning();
+    return profile;
+  }
+
+  async updateProfile(profileId: number, updates: { name?: string; coverLetter?: string | null }): Promise<Profile> {
+    const [profile] = await db.update(profiles).set(updates).where(eq(profiles.id, profileId)).returning();
     return profile;
   }
 

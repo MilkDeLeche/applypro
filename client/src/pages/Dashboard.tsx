@@ -1,4 +1,4 @@
-import { useProfile, useUpdateProfile, useAddExperience, useDeleteExperience, useAddEducation, useDeleteEducation, useClearProfileData } from "@/hooks/use-profile";
+import { useProfile, useUpdateProfile, useAddExperience, useDeleteExperience, useAddEducation, useDeleteEducation, useClearProfileData, useUpdateCoverLetter } from "@/hooks/use-profile";
 import { ResumeUpload } from "@/components/ResumeUpload";
 import { ProfileSwitcher } from "@/components/ProfileSwitcher";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Trash2, Briefcase, GraduationCap, Link2, Linkedin, User as UserIcon, Mail, Phone, Calendar, RotateCcw, Globe } from "lucide-react";
+import { Plus, Trash2, Briefcase, GraduationCap, Link2, Linkedin, User as UserIcon, Mail, Phone, Calendar, RotateCcw, Globe, FileText } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { motion } from "framer-motion";
@@ -197,6 +198,14 @@ export default function Dashboard() {
                 )}
               </div>
             </motion.div>
+
+            {/* Cover Letter Section */}
+            {data.activeProfile && (
+              <CoverLetterSection 
+                profileId={data.activeProfile.profile.id} 
+                coverLetter={data.activeProfile.profile.coverLetter || ''} 
+              />
+            )}
           </div>
         </div>
       </main>
@@ -277,6 +286,66 @@ function EmptyState({ title, description }: { title: string, description: string
       <p className="font-medium text-foreground">{title}</p>
       <p className="text-sm text-muted-foreground mt-1">{description}</p>
     </div>
+  );
+}
+
+function CoverLetterSection({ profileId, coverLetter }: { profileId: number; coverLetter: string }) {
+  const [text, setText] = useState(coverLetter);
+  const [hasChanges, setHasChanges] = useState(false);
+  const { mutate: updateCoverLetter, isPending } = useUpdateCoverLetter();
+
+  useEffect(() => {
+    setText(coverLetter);
+    setHasChanges(false);
+  }, [coverLetter, profileId]);
+
+  const handleSave = () => {
+    updateCoverLetter({ id: profileId, coverLetter: text }, {
+      onSuccess: () => setHasChanges(false)
+    });
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.6 }}
+    >
+      <div className="flex items-center justify-between mb-4 mt-8">
+        <h2 className="text-2xl font-bold font-display flex items-center gap-2">
+          <FileText className="w-6 h-6 text-primary" />
+          Cover Letter
+        </h2>
+        {hasChanges && (
+          <Button 
+            onClick={handleSave} 
+            disabled={isPending}
+            data-testid="button-save-cover-letter"
+          >
+            {isPending ? 'Saving...' : 'Save Cover Letter'}
+          </Button>
+        )}
+      </div>
+      
+      <Card className="shadow-lg shadow-black/5 border-border/50">
+        <CardContent className="p-6">
+          <p className="text-sm text-muted-foreground mb-4">
+            Paste your cover letter here. When you use the Chrome extension on job applications, 
+            it will automatically fill cover letter fields with this content.
+          </p>
+          <Textarea
+            placeholder="Dear Hiring Manager,&#10;&#10;I am writing to express my interest in..."
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+              setHasChanges(e.target.value !== coverLetter);
+            }}
+            className="min-h-[300px] resize-y"
+            data-testid="textarea-cover-letter"
+          />
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 

@@ -363,8 +363,11 @@ export async function registerRoutes(
 
   app.put('/api/profiles/:id', requireAuth, async (req, res) => {
     const profileId = Number(req.params.id);
-    const { name } = req.body;
-    const profile = await storage.renameProfile(profileId, name);
+    const { name, coverLetter } = req.body;
+    const updates: { name?: string; coverLetter?: string | null } = {};
+    if (name !== undefined) updates.name = name;
+    if (coverLetter !== undefined) updates.coverLetter = coverLetter;
+    const profile = await storage.updateProfile(profileId, updates);
     res.json(profile);
   });
 

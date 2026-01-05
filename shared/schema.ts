@@ -66,6 +66,7 @@ export const profiles = pgTable("profiles", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").references(() => users.id).notNull(),
   name: text("name").notNull().default('Default'),
+  coverLetter: text("cover_letter"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
