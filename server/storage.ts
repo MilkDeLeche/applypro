@@ -1,10 +1,10 @@
 import { db } from "./db";
 import {
-  users, experience, education,
+  users, experience, education, profiles,
   type User, type InsertUser, type Experience, type InsertExperience, type Education, type InsertEducation,
-  type UserProfile
+  type Profile, type InsertProfile, type UserProfile, type ResumeProfile, SUBSCRIPTION_TIERS, type SubscriptionTier
 } from "@shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 
 const FREE_TIER_RESUME_LIMIT = 3;
 const FREE_TIER_AUTOFILL_LIMIT = 10;
@@ -16,20 +16,28 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<InsertUser>): Promise<User>;
 
-  getProfile(userId: string): Promise<UserProfile>;
+  getUserProfile(userId: string): Promise<UserProfile>;
   
-  createExperience(userId: string, exp: Omit<InsertExperience, "userId">): Promise<Experience>;
+  // Profile management
+  createProfile(userId: string, name: string): Promise<Profile>;
+  getProfiles(userId: string): Promise<Profile[]>;
+  getResumeProfile(profileId: number): Promise<ResumeProfile | null>;
+  deleteProfile(profileId: number): Promise<void>;
+  renameProfile(profileId: number, name: string): Promise<Profile>;
+  setActiveProfile(userId: string, profileId: number): Promise<void>;
+  
+  createExperience(profileId: number, exp: Omit<InsertExperience, "userId" | "profileId">): Promise<Experience>;
   deleteExperience(id: number): Promise<void>;
   
-  createEducation(userId: string, edu: Omit<InsertEducation, "userId">): Promise<Education>;
+  createEducation(profileId: number, edu: Omit<InsertEducation, "userId" | "profileId">): Promise<Education>;
   deleteEducation(id: number): Promise<void>;
   
   // For AI parsing overwrite
-  updateProfileWithParsedData(userId: string, data: {
+  updateProfileWithParsedData(userId: string, profileId: number, data: {
     user: Partial<InsertUser>,
-    experience: Omit<InsertExperience, "userId">[],
-    education: Omit<InsertEducation, "userId">[]
-  }): Promise<UserProfile>;
+    experience: Omit<InsertExperience, "userId" | "profileId">[],
+    education: Omit<InsertEducation, "userId" | "profileId">[]
+  }): Promise<ResumeProfile>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -39,13 +47,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    const result = await db.execute(sql`SELECT * FROM users WHERE email = ${username} LIMIT 1`);
+    return result.rows[0] as User | undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
+    const [profile] = await db.insert(profiles).values({ userId: user.id, name: 'Default Resume' }).returning();
+    await db.update(users).set({ activeProfileId: profile.id }).where(eq(users.id, user.id));
+    return this.getUser(user.id) as Promise<User>;
   }
 
   async updateUser(id: string, updates: Partial<InsertUser>): Promise<User> {
@@ -53,20 +63,66 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async getProfile(userId: string): Promise<UserProfile> {
+  async getUserProfile(userId: string): Promise<UserProfile> {
     const [user] = await db.select().from(users).where(eq(users.id, userId));
-    const userExperience = await db.select().from(experience).where(eq(experience.userId, userId));
-    const userEducation = await db.select().from(education).where(eq(education.userId, userId));
+    const userProfiles = await db.select().from(profiles).where(eq(profiles.userId, userId));
+    
+    const resumeProfiles: ResumeProfile[] = await Promise.all(
+      userProfiles.map(async (p) => {
+        const exp = await db.select().from(experience).where(eq(experience.profileId, p.id));
+        const edu = await db.select().from(education).where(eq(education.profileId, p.id));
+        return { profile: p, experience: exp, education: edu };
+      })
+    );
+    
+    const activeProfile = user?.activeProfileId 
+      ? resumeProfiles.find(rp => rp.profile.id === user.activeProfileId) || null
+      : resumeProfiles[0] || null;
     
     return {
       user,
-      experience: userExperience,
-      education: userEducation
+      profiles: resumeProfiles,
+      activeProfile
     };
   }
 
-  async createExperience(userId: string, exp: Omit<InsertExperience, "userId">): Promise<Experience> {
-    const [newExp] = await db.insert(experience).values({ ...exp, userId }).returning();
+  async createProfile(userId: string, name: string): Promise<Profile> {
+    const [profile] = await db.insert(profiles).values({ userId, name }).returning();
+    return profile;
+  }
+
+  async getProfiles(userId: string): Promise<Profile[]> {
+    return db.select().from(profiles).where(eq(profiles.userId, userId));
+  }
+
+  async getResumeProfile(profileId: number): Promise<ResumeProfile | null> {
+    const [profile] = await db.select().from(profiles).where(eq(profiles.id, profileId));
+    if (!profile) return null;
+    
+    const exp = await db.select().from(experience).where(eq(experience.profileId, profileId));
+    const edu = await db.select().from(education).where(eq(education.profileId, profileId));
+    
+    return { profile, experience: exp, education: edu };
+  }
+
+  async deleteProfile(profileId: number): Promise<void> {
+    await db.delete(experience).where(eq(experience.profileId, profileId));
+    await db.delete(education).where(eq(education.profileId, profileId));
+    await db.delete(profiles).where(eq(profiles.id, profileId));
+  }
+
+  async renameProfile(profileId: number, name: string): Promise<Profile> {
+    const [profile] = await db.update(profiles).set({ name }).where(eq(profiles.id, profileId)).returning();
+    return profile;
+  }
+
+  async setActiveProfile(userId: string, profileId: number): Promise<void> {
+    await db.update(users).set({ activeProfileId: profileId }).where(eq(users.id, userId));
+  }
+
+  async createExperience(profileId: number, exp: Omit<InsertExperience, "userId" | "profileId">): Promise<Experience> {
+    const [profile] = await db.select().from(profiles).where(eq(profiles.id, profileId));
+    const [newExp] = await db.insert(experience).values({ ...exp, userId: profile.userId, profileId }).returning();
     return newExp;
   }
 
@@ -74,8 +130,9 @@ export class DatabaseStorage implements IStorage {
     await db.delete(experience).where(eq(experience.id, id));
   }
 
-  async createEducation(userId: string, edu: Omit<InsertEducation, "userId">): Promise<Education> {
-    const [newEdu] = await db.insert(education).values({ ...edu, userId }).returning();
+  async createEducation(profileId: number, edu: Omit<InsertEducation, "userId" | "profileId">): Promise<Education> {
+    const [profile] = await db.select().from(profiles).where(eq(profiles.id, profileId));
+    const [newEdu] = await db.insert(education).values({ ...edu, userId: profile.userId, profileId }).returning();
     return newEdu;
   }
 
@@ -83,27 +140,27 @@ export class DatabaseStorage implements IStorage {
     await db.delete(education).where(eq(education.id, id));
   }
 
-  async updateProfileWithParsedData(userId: string, data: {
+  async updateProfileWithParsedData(userId: string, profileId: number, data: {
     user: Partial<InsertUser>,
-    experience: Omit<InsertExperience, "userId">[],
-    education: Omit<InsertEducation, "userId">[]
-  }): Promise<UserProfile> {
+    experience: Omit<InsertExperience, "userId" | "profileId">[],
+    education: Omit<InsertEducation, "userId" | "profileId">[]
+  }): Promise<ResumeProfile> {
     if (Object.keys(data.user).length > 0) {
       await this.updateUser(userId, data.user);
     }
     
-    await db.delete(experience).where(eq(experience.userId, userId));
-    await db.delete(education).where(eq(education.userId, userId));
+    await db.delete(experience).where(eq(experience.profileId, profileId));
+    await db.delete(education).where(eq(education.profileId, profileId));
     
     for (const exp of data.experience) {
-      await this.createExperience(userId, exp);
+      await this.createExperience(profileId, exp);
     }
     
     for (const edu of data.education) {
-      await this.createEducation(userId, edu);
+      await this.createEducation(profileId, edu);
     }
     
-    return this.getProfile(userId);
+    return this.getResumeProfile(profileId) as Promise<ResumeProfile>;
   }
 
   async updateStripeInfo(userId: string, info: { stripeCustomerId?: string; stripeSubscriptionId?: string | null }): Promise<User> {
@@ -205,6 +262,32 @@ export class DatabaseStorage implements IStorage {
       sql`SELECT * FROM stripe.products WHERE id = ${productId}`
     );
     return result.rows[0] || null;
+  }
+
+  getMaxProfiles(tier: SubscriptionTier): number {
+    switch (tier) {
+      case SUBSCRIPTION_TIERS.PRO: return 5;
+      case SUBSCRIPTION_TIERS.STANDARD: return 1;
+      case SUBSCRIPTION_TIERS.FREE: return 1;
+      default: return 1;
+    }
+  }
+
+  async canCreateProfile(userId: string): Promise<{ allowed: boolean; maxProfiles: number; currentCount: number }> {
+    const user = await this.getUser(userId);
+    if (!user) return { allowed: false, maxProfiles: 1, currentCount: 0 };
+
+    const tier = (user.subscriptionTier as SubscriptionTier) || SUBSCRIPTION_TIERS.FREE;
+    const maxProfiles = this.getMaxProfiles(tier);
+    const existingProfiles = await this.getProfiles(userId);
+    const currentCount = existingProfiles.length;
+
+    return { allowed: currentCount < maxProfiles, maxProfiles, currentCount };
+  }
+
+  async updateSubscriptionTier(userId: string, tier: SubscriptionTier): Promise<User> {
+    const [user] = await db.update(users).set({ subscriptionTier: tier }).where(eq(users.id, userId)).returning();
+    return user;
   }
 }
 

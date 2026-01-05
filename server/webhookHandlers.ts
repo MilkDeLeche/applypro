@@ -1,5 +1,6 @@
 import { getStripeSync, getUncachableStripeClient } from './stripeClient';
 import { storage } from './storage';
+import { SUBSCRIPTION_TIERS, type SubscriptionTier } from '@shared/schema';
 import Stripe from 'stripe';
 
 export class WebhookHandlers {
@@ -28,13 +29,17 @@ export class WebhookHandlers {
           const customerId = typeof session.customer === 'string' ? session.customer : session.customer.id;
           const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription.id;
           
+          // Get tier from session metadata
+          const tier = (session.metadata?.tier as SubscriptionTier) || SUBSCRIPTION_TIERS.STANDARD;
+          
           const user = await storage.getUserByStripeCustomerId(customerId);
           if (user) {
             await storage.updateStripeInfo(user.id, {
               stripeSubscriptionId: subscriptionId
             });
+            await storage.updateSubscriptionTier(user.id, tier);
             await storage.resetUsage(user.id);
-            console.log(`Activated subscription ${subscriptionId} for user ${user.id}`);
+            console.log(`Activated ${tier} subscription ${subscriptionId} for user ${user.id}`);
           }
         }
         break;
@@ -51,6 +56,12 @@ export class WebhookHandlers {
           await storage.updateStripeInfo(user.id, {
             stripeSubscriptionId: isActive ? subscription.id : null
           });
+          
+          // Reset to free tier if subscription cancelled
+          if (!isActive) {
+            await storage.updateSubscriptionTier(user.id, SUBSCRIPTION_TIERS.FREE);
+          }
+          
           console.log(`Subscription ${subscription.id} status: ${subscription.status} for user ${user.id}`);
         }
         break;

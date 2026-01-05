@@ -3,19 +3,34 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
+
+type UsageData = {
+  tier: 'free' | 'standard' | 'pro';
+  isPremium: boolean;
+  resumeParses: { used: number; remaining: number; limit: number };
+  autofills: { used: number; remaining: number; limit: number };
+  profiles: { current: number; max: number };
+};
 
 export default function Pricing() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
 
+  const { data: usageData } = useQuery<UsageData>({
+    queryKey: ['/api/usage'],
+    enabled: !!user,
+  });
+
   const checkoutMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (tier: 'standard' | 'pro') => {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier })
       });
       if (!res.ok) throw new Error('Failed to create checkout session');
       return res.json();
@@ -30,23 +45,28 @@ export default function Pricing() {
     }
   });
 
-  const handleUpgrade = () => {
+  const handleUpgrade = (tier: 'standard' | 'pro') => {
     if (!user) {
       window.location.href = '/api/login';
       return;
     }
-    checkoutMutation.mutate();
+    checkoutMutation.mutate(tier);
   };
+
+  const currentTier = usageData?.tier || 'free';
 
   return (
     <div className="min-h-screen bg-background p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
+          <Link href="/" className="text-muted-foreground hover:text-foreground mb-4 inline-block">
+            Back to Dashboard
+          </Link>
           <h1 className="text-4xl font-bold mb-4" data-testid="text-pricing-title">Simple, Fair Pricing</h1>
           <p className="text-lg text-muted-foreground">Start free, upgrade when you need more</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-3 gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Free</CardTitle>
@@ -57,6 +77,10 @@ export default function Pricing() {
               <ul className="space-y-3">
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
+                  <span>1 resume profile</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
                   <span>3 resume parses per month</span>
                 </li>
                 <li className="flex items-center gap-2">
@@ -65,35 +89,37 @@ export default function Pricing() {
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span>Basic profile management</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
                   <span>Chrome extension access</span>
                 </li>
               </ul>
             </CardContent>
             <CardFooter>
-              <Button variant="outline" className="w-full" disabled data-testid="button-free-current">
-                Current Plan
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                disabled={currentTier === 'free'}
+                data-testid="button-free-current"
+              >
+                {currentTier === 'free' ? 'Current Plan' : 'Free Plan'}
               </Button>
             </CardFooter>
           </Card>
 
-          <Card className="border-primary">
+          <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Pro</CardTitle>
-                <Badge>Best Value</Badge>
-              </div>
-              <CardDescription>For serious job seekers</CardDescription>
+              <CardTitle>Standard</CardTitle>
+              <CardDescription>For active job seekers</CardDescription>
               <div className="mt-4">
-                <span className="text-3xl font-bold">$25</span>
+                <span className="text-3xl font-bold">$35</span>
                 <span className="text-muted-foreground">/year</span>
               </div>
             </CardHeader>
             <CardContent>
               <ul className="space-y-3">
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>1 resume profile</span>
+                </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
                   <span>Unlimited resume parses</span>
@@ -106,9 +132,50 @@ export default function Pricing() {
                   <Check className="h-4 w-4 text-green-500" />
                   <span>Priority AI processing</span>
                 </li>
+              </ul>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                className="w-full" 
+                variant={currentTier === 'standard' ? 'outline' : 'default'}
+                onClick={() => handleUpgrade('standard')}
+                disabled={checkoutMutation.isPending || authLoading || currentTier === 'standard'}
+                data-testid="button-upgrade-standard"
+              >
+                {currentTier === 'standard' ? 'Current Plan' : checkoutMutation.isPending ? "Loading..." : "Get Standard"}
+              </Button>
+            </CardFooter>
+          </Card>
+
+          <Card className="border-primary relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <Badge>Best Value</Badge>
+            </div>
+            <CardHeader>
+              <CardTitle>Pro</CardTitle>
+              <CardDescription>For serious job seekers</CardDescription>
+              <div className="mt-4">
+                <span className="text-3xl font-bold">$45</span>
+                <span className="text-muted-foreground">/year</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span>Advanced profile fields</span>
+                  <span className="font-medium">5 resume profiles</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>Unlimited resume parses</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>Unlimited form autofills</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>Quick-switch between profiles</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
@@ -119,17 +186,24 @@ export default function Pricing() {
             <CardFooter>
               <Button 
                 className="w-full" 
-                onClick={handleUpgrade}
-                disabled={checkoutMutation.isPending || authLoading}
+                variant={currentTier === 'pro' ? 'outline' : 'default'}
+                onClick={() => handleUpgrade('pro')}
+                disabled={checkoutMutation.isPending || authLoading || currentTier === 'pro'}
                 data-testid="button-upgrade-pro"
               >
-                {checkoutMutation.isPending ? "Loading..." : "Upgrade to Pro"}
+                {currentTier === 'pro' ? 'Current Plan' : checkoutMutation.isPending ? "Loading..." : "Get Pro"}
               </Button>
             </CardFooter>
           </Card>
         </div>
 
-        <div className="mt-12 text-center text-sm text-muted-foreground">
+        <div className="mt-8 text-center">
+          <p className="text-sm text-muted-foreground mb-2">
+            Pro is perfect for applying to different types of jobs - create separate resumes for IT, Customer Service, Sales, and more!
+          </p>
+        </div>
+
+        <div className="mt-8 text-center text-sm text-muted-foreground">
           <p>All plans include a 7-day money-back guarantee</p>
           <p className="mt-2">Secure payments powered by Stripe</p>
         </div>

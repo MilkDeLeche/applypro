@@ -32,7 +32,7 @@ export async function registerRoutes(
 
   app.get(api.profile.get.path, requireAuth, async (req, res) => {
     const userId = getUserId(req);
-    const profile = await storage.getProfile(userId);
+    const profile = await storage.getUserProfile(userId);
     res.json(profile);
   });
 
@@ -115,13 +115,28 @@ export async function registerRoutes(
       });
 
       const parsedData = JSON.parse(completion.choices[0].message.content || "{}");
+
+      // Get or create the user's active profile
+      const user = await storage.getUser(userId);
+      let profileId = user?.activeProfileId;
       
-      const userId = getUserId(req);
+      if (!profileId) {
+        const userProfiles = await storage.getProfiles(userId);
+        if (userProfiles.length > 0) {
+          profileId = userProfiles[0].id;
+          await storage.setActiveProfile(userId, profileId);
+        } else {
+          const newProfile = await storage.createProfile(userId, 'Default Resume');
+          profileId = newProfile.id;
+          await storage.setActiveProfile(userId, profileId);
+        }
+      }
 
       // Map parsed data to our schema structure
       const updateData = {
         user: {
-            name: parsedData.name,
+            firstName: parsedData.name?.split(' ')[0] || parsedData.firstName,
+            lastName: parsedData.name?.split(' ').slice(1).join(' ') || parsedData.lastName,
             email: parsedData.email,
             phone: parsedData.phone,
             linkedin: parsedData.linkedin,
@@ -131,11 +146,11 @@ export async function registerRoutes(
         education: parsedData.education || []
       };
 
-      const profile = await storage.updateProfileWithParsedData(userId, updateData);
+      const resumeProfile = await storage.updateProfileWithParsedData(userId, profileId, updateData);
       
       await storage.incrementResumeParses(userId);
       
-      res.json({ message: "Resume parsed successfully", profile });
+      res.json({ message: "Resume parsed successfully", profile: resumeProfile });
 
     } catch (error: any) {
       console.error("Resume parsing error:", error);
@@ -146,7 +161,11 @@ export async function registerRoutes(
   app.post(api.experience.create.path, requireAuth, async (req, res) => {
     const input = api.experience.create.input.parse(req.body);
     const userId = getUserId(req);
-    const exp = await storage.createExperience(userId, input);
+    const user = await storage.getUser(userId);
+    if (!user?.activeProfileId) {
+      return res.status(400).json({ message: "No active profile" });
+    }
+    const exp = await storage.createExperience(user.activeProfileId, input);
     res.status(201).json(exp);
   });
 
@@ -155,11 +174,14 @@ export async function registerRoutes(
     res.status(204).send();
   });
   
-  // Education routes similar...
   app.post(api.education.create.path, requireAuth, async (req, res) => {
     const input = api.education.create.input.parse(req.body);
     const userId = getUserId(req);
-    const edu = await storage.createEducation(userId, input);
+    const user = await storage.getUser(userId);
+    if (!user?.activeProfileId) {
+      return res.status(400).json({ message: "No active profile" });
+    }
+    const edu = await storage.createEducation(user.activeProfileId, input);
     res.status(201).json(edu);
   });
 
@@ -173,8 +195,10 @@ export async function registerRoutes(
     const user = await storage.getUser(userId);
     const resumeUsage = await storage.canParseResume(userId);
     const autofillUsage = await storage.canAutofill(userId);
+    const profileCheck = await storage.canCreateProfile(userId);
     
     res.json({
+      tier: user?.subscriptionTier || 'free',
       isPremium: !!user?.stripeSubscriptionId,
       resumeParses: {
         used: user?.resumeParsesThisPeriod || 0,
@@ -185,6 +209,10 @@ export async function registerRoutes(
         used: user?.autofillsThisPeriod || 0,
         remaining: autofillUsage.remaining,
         limit: autofillUsage.isPremium ? -1 : 10
+      },
+      profiles: {
+        current: profileCheck.currentCount,
+        max: profileCheck.maxProfiles
       }
     });
   });
@@ -195,15 +223,84 @@ export async function registerRoutes(
     
     if (!usageCheck.allowed) {
       return res.status(403).json({ 
-        message: "Free tier limit reached. Upgrade to Pro for unlimited autofills.",
+        message: "Free tier limit reached. Upgrade to Standard or Pro for unlimited autofills.",
         remaining: usageCheck.remaining
       });
     }
     
-    const profile = await storage.getProfile(userId);
+    const profileId = req.query.profileId ? Number(req.query.profileId) : null;
+    const user = await storage.getUser(userId);
+    const targetProfileId = profileId || user?.activeProfileId;
+    
+    if (!targetProfileId) {
+      return res.status(400).json({ message: "No profile selected" });
+    }
+    
+    const resumeProfile = await storage.getResumeProfile(targetProfileId);
     await storage.incrementAutofills(userId);
     
+    res.json({ user, ...resumeProfile });
+  });
+
+  // Profile management routes
+  app.get('/api/profiles', requireAuth, async (req, res) => {
+    const userId = getUserId(req);
+    const profiles = await storage.getProfiles(userId);
+    const user = await storage.getUser(userId);
+    res.json({ profiles, activeProfileId: user?.activeProfileId });
+  });
+
+  app.post('/api/profiles', requireAuth, async (req, res) => {
+    const userId = getUserId(req);
+    const { name } = req.body;
+    
+    const canCreate = await storage.canCreateProfile(userId);
+    if (!canCreate.allowed) {
+      return res.status(403).json({ 
+        message: `You can only have ${canCreate.maxProfiles} profile(s) on your current plan. Upgrade to Pro for up to 5 profiles.`,
+        currentCount: canCreate.currentCount,
+        maxProfiles: canCreate.maxProfiles
+      });
+    }
+    
+    const profile = await storage.createProfile(userId, name || 'New Resume');
+    res.status(201).json(profile);
+  });
+
+  app.put('/api/profiles/:id', requireAuth, async (req, res) => {
+    const profileId = Number(req.params.id);
+    const { name } = req.body;
+    const profile = await storage.renameProfile(profileId, name);
     res.json(profile);
+  });
+
+  app.delete('/api/profiles/:id', requireAuth, async (req, res) => {
+    const userId = getUserId(req);
+    const profileId = Number(req.params.id);
+    
+    const profiles = await storage.getProfiles(userId);
+    if (profiles.length <= 1) {
+      return res.status(400).json({ message: "Cannot delete your only profile" });
+    }
+    
+    await storage.deleteProfile(profileId);
+    
+    const user = await storage.getUser(userId);
+    if (user?.activeProfileId === profileId) {
+      const remaining = profiles.filter(p => p.id !== profileId);
+      if (remaining.length > 0) {
+        await storage.setActiveProfile(userId, remaining[0].id);
+      }
+    }
+    
+    res.status(204).send();
+  });
+
+  app.post('/api/profiles/:id/activate', requireAuth, async (req, res) => {
+    const userId = getUserId(req);
+    const profileId = Number(req.params.id);
+    await storage.setActiveProfile(userId, profileId);
+    res.json({ message: "Profile activated" });
   });
 
   app.get('/api/stripe/publishable-key', async (req, res) => {
@@ -218,6 +315,7 @@ export async function registerRoutes(
   app.post('/api/checkout', requireAuth, async (req, res) => {
     try {
       const userId = getUserId(req);
+      const { tier } = req.body; // 'standard' or 'pro'
       const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
@@ -235,6 +333,21 @@ export async function registerRoutes(
         customerId = customer.id;
       }
 
+      const plans = {
+        standard: {
+          name: 'SudoFillr Standard',
+          description: 'Unlimited resume parsing and autofills for 1 year',
+          amount: 3500 // $35
+        },
+        pro: {
+          name: 'SudoFillr Pro',
+          description: 'Unlimited everything + 5 resume profiles for 1 year',
+          amount: 4500 // $45
+        }
+      };
+
+      const selectedPlan = plans[tier as keyof typeof plans] || plans.standard;
+
       const session = await stripe.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ['card'],
@@ -242,15 +355,17 @@ export async function registerRoutes(
           price_data: {
             currency: 'usd',
             product_data: {
-              name: 'SudoFillr Pro',
-              description: 'Unlimited resume parsing and autofills for 1 year'
+              name: selectedPlan.name,
+              description: selectedPlan.description,
+              metadata: { tier: tier || 'standard' }
             },
-            unit_amount: 2500,
+            unit_amount: selectedPlan.amount,
             recurring: { interval: 'year' }
           },
           quantity: 1
         }],
         mode: 'subscription',
+        metadata: { tier: tier || 'standard', userId },
         success_url: `${req.protocol}://${req.get('host')}/dashboard?success=true`,
         cancel_url: `${req.protocol}://${req.get('host')}/pricing?canceled=true`,
       });
