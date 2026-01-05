@@ -10,11 +10,10 @@ import fs from "fs";
 import { OpenAI } from "openai";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { 
-  createMercadoPagoSubscription, 
-  isMercadoPagoConfigured, 
-  MERCADOPAGO_PRICING,
-  type MercadoPagoCountry 
-} from "./mercadopagoClient";
+  createLemonSqueezyCheckout, 
+  isLemonSqueezyConfigured,
+  verifyLemonSqueezyWebhook
+} from "./lemonSqueezyClient";
 
 const upload = multer({ dest: '/tmp/uploads/' });
 
@@ -536,18 +535,14 @@ export async function registerRoutes(
     }
   });
 
-  // Mercado Pago checkout for LATAM users
-  app.post('/api/mercadopago/checkout', requireAuth, async (req, res) => {
+  // Lemon Squeezy checkout for all users (alternative to Stripe)
+  app.post('/api/lemonsqueezy/checkout', requireAuth, async (req, res) => {
     try {
       const userId = getUserId(req);
-      const { tier, country } = req.body;
+      const { tier } = req.body;
       
-      if (!['mx', 'cl'].includes(country)) {
-        return res.status(400).json({ error: 'Mercado Pago only available for Mexico (mx) and Chile (cl)' });
-      }
-      
-      if (!isMercadoPagoConfigured(country as MercadoPagoCountry)) {
-        return res.status(503).json({ error: 'Mercado Pago not configured for this country' });
+      if (!isLemonSqueezyConfigured()) {
+        return res.status(503).json({ error: 'Lemon Squeezy not configured' });
       }
       
       const user = await storage.getUser(userId);
@@ -555,23 +550,75 @@ export async function registerRoutes(
         return res.status(404).json({ error: 'User not found' });
       }
       
-      const backUrl = `${req.protocol}://${req.get('host')}/dashboard?success=true`;
+      const successUrl = `${req.protocol}://${req.get('host')}/dashboard?success=true`;
       
-      const subscription = await createMercadoPagoSubscription({
-        country: country as MercadoPagoCountry,
+      const checkout = await createLemonSqueezyCheckout({
         tier: tier || 'standard',
-        payerEmail: user.email || '',
-        externalReference: `${userId}:${tier || 'standard'}`,
-        backUrl
+        userEmail: user.email || '',
+        userId: userId,
+        successUrl
       });
       
       res.json({ 
-        url: subscription.init_point,
-        subscriptionId: subscription.id 
+        url: checkout.url,
+        checkoutId: checkout.checkoutId 
       });
     } catch (error: any) {
-      console.error('Mercado Pago checkout error:', error);
-      res.status(500).json({ error: 'Failed to create Mercado Pago subscription' });
+      console.error('Lemon Squeezy checkout error:', error);
+      res.status(500).json({ error: 'Failed to create Lemon Squeezy checkout' });
+    }
+  });
+
+  // Lemon Squeezy webhook handler with signature verification
+  app.post('/api/lemonsqueezy/webhook', async (req, res) => {
+    try {
+      const signature = req.headers['x-signature'] as string;
+      const rawBody = (req as any).rawBody as Buffer;
+      
+      if (!rawBody || !signature || !verifyLemonSqueezyWebhook(rawBody, signature)) {
+        console.warn('Lemon Squeezy webhook signature verification failed');
+        return res.status(401).json({ error: 'Invalid signature' });
+      }
+      
+      const payload = req.body;
+      const eventName = payload.meta?.event_name;
+      
+      console.log('Lemon Squeezy webhook received:', eventName);
+      
+      if (eventName === 'subscription_created' || eventName === 'order_created') {
+        const customData = payload.meta?.custom_data;
+        const userId = customData?.user_id;
+        const tier = customData?.tier as 'standard' | 'pro';
+        
+        if (userId && tier) {
+          const subscriptionId = payload.data?.id;
+          await storage.updateUser(userId, {
+            subscriptionTier: tier,
+            paymentProvider: 'lemonsqueezy',
+            lemonSqueezySubscriptionId: subscriptionId,
+          });
+          console.log(`User ${userId} upgraded to ${tier} via Lemon Squeezy`);
+        }
+      }
+      
+      if (eventName === 'subscription_cancelled' || eventName === 'subscription_expired') {
+        const customData = payload.meta?.custom_data;
+        const userId = customData?.user_id;
+        
+        if (userId) {
+          await storage.updateUser(userId, {
+            subscriptionTier: 'free',
+            paymentProvider: null,
+            lemonSqueezySubscriptionId: null,
+          });
+          console.log(`User ${userId} subscription cancelled via Lemon Squeezy`);
+        }
+      }
+      
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error('Lemon Squeezy webhook error:', error);
+      res.status(500).json({ error: 'Webhook processing failed' });
     }
   });
 
@@ -580,27 +627,20 @@ export async function registerRoutes(
     const country = (req.query.country as string) || 'us';
     
     const providers = {
-      stripe: true, // Always available
-      mercadopago: false
+      stripe: true,
+      lemonsqueezy: isLemonSqueezyConfigured()
     };
     
-    if (country === 'mx' && isMercadoPagoConfigured('mx')) {
-      providers.mercadopago = true;
-    }
-    if (country === 'cl' && isMercadoPagoConfigured('cl')) {
-      providers.mercadopago = true;
-    }
-    
-    const pricing = {
+    const pricing: Record<string, { standard: number; pro: number; currency: string }> = {
       us: { standard: 35, pro: 45, currency: 'USD' },
-      mx: { standard: MERCADOPAGO_PRICING.mx.standard.amount, pro: MERCADOPAGO_PRICING.mx.pro.amount, currency: 'MXN' },
-      cl: { standard: MERCADOPAGO_PRICING.cl.standard.amount, pro: MERCADOPAGO_PRICING.cl.pro.amount, currency: 'CLP' },
+      mx: { standard: 650, pro: 850, currency: 'MXN' },
+      cl: { standard: 30000, pro: 40000, currency: 'CLP' },
       other: { standard: 35, pro: 45, currency: 'USD' }
     };
     
     res.json({
       providers,
-      pricing: pricing[country as keyof typeof pricing] || pricing.us
+      pricing: pricing[country] || pricing.us
     });
   });
 

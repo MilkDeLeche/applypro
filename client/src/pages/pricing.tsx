@@ -18,7 +18,7 @@ type UsageData = {
 };
 
 type PaymentProvidersData = {
-  providers: { stripe: boolean; mercadopago: boolean };
+  providers: { stripe: boolean; lemonsqueezy: boolean };
   pricing: { standard: number; pro: number; currency: string };
 };
 
@@ -61,15 +61,15 @@ export default function Pricing() {
     }
   });
 
-  const mercadopagoCheckoutMutation = useMutation({
+  const lemonSqueezyCheckoutMutation = useMutation({
     mutationFn: async (tier: 'standard' | 'pro') => {
-      const res = await fetch('/api/mercadopago/checkout', {
+      const res = await fetch('/api/lemonsqueezy/checkout', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier, country })
+        body: JSON.stringify({ tier })
       });
-      if (!res.ok) throw new Error('Failed to create Mercado Pago session');
+      if (!res.ok) throw new Error('Failed to create Lemon Squeezy session');
       return res.json();
     },
     onSuccess: (data) => {
@@ -88,16 +88,16 @@ export default function Pricing() {
       return;
     }
     
-    // Use Mercado Pago for LATAM countries if available
-    if ((country === 'mx' || country === 'cl') && paymentData?.providers.mercadopago) {
-      mercadopagoCheckoutMutation.mutate(tier);
+    // Use Lemon Squeezy for LATAM countries if configured, otherwise Stripe
+    if ((country === 'mx' || country === 'cl') && paymentData?.providers.lemonsqueezy) {
+      lemonSqueezyCheckoutMutation.mutate(tier);
     } else {
       stripeCheckoutMutation.mutate(tier);
     }
   };
 
   const currentTier = usageData?.tier || 'free';
-  const isLoading = stripeCheckoutMutation.isPending || mercadopagoCheckoutMutation.isPending;
+  const isLoading = stripeCheckoutMutation.isPending || lemonSqueezyCheckoutMutation.isPending;
 
   // Get localized pricing
   const pricing = PRICING[country] || PRICING.us;
@@ -316,13 +316,13 @@ export default function Pricing() {
 
         <div className="mt-12 text-center text-sm text-muted-foreground">
           <p className="mb-2">
-            {(country === 'mx' || country === 'cl') && paymentData?.providers.mercadopago 
-              ? "Pagos seguros con Mercado Pago" 
+            {(country === 'mx' || country === 'cl') && paymentData?.providers.lemonsqueezy 
+              ? "Pagos seguros con Lemon Squeezy" 
               : "Secure payments powered by Stripe"}
           </p>
-          {(country === 'mx' || country === 'cl') && paymentData?.providers.mercadopago && (
+          {(country === 'mx' || country === 'cl') && (
             <p className="text-xs">
-              {country === 'mx' ? 'Acepta tarjetas mexicanas, OXXO y más' : 'Acepta tarjetas chilenas y transferencias'}
+              {country === 'mx' ? 'Acepta tarjetas internacionales y métodos locales' : 'Acepta tarjetas internacionales y métodos locales'}
             </p>
           )}
         </div>

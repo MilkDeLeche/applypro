@@ -93,7 +93,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Payment Providers
 - **Stripe**: Default for US and international users
-- **Mercado Pago**: For Mexico and Chile users (optional, requires configuration)
+- **Lemon Squeezy**: Alternative payment provider for LATAM markets (simpler merchant of record)
 - **Pricing**:
   - US: $35/$45 USD/year (Standard/Pro)
   - Mexico: $650/$850 MXN/year
@@ -105,8 +105,11 @@ Preferred communication style: Simple, everyday language.
 - `OPENAI_API_KEY`: For resume parsing AI calls
 - `AI_INTEGRATIONS_OPENAI_API_KEY` / `AI_INTEGRATIONS_OPENAI_BASE_URL`: Replit AI integration
 - Stripe credentials managed via Replit Connectors
-- `MERCADOPAGO_ACCESS_TOKEN_MX`: (Optional) Mercado Pago Mexico credentials
-- `MERCADOPAGO_ACCESS_TOKEN_CL`: (Optional) Mercado Pago Chile credentials
+- `LEMONSQUEEZY_API_KEY`: Lemon Squeezy API key
+- `LEMONSQUEEZY_STORE_ID`: Lemon Squeezy store ID
+- `LEMONSQUEEZY_STANDARD_VARIANT_ID`: Product variant ID for Standard tier
+- `LEMONSQUEEZY_PRO_VARIANT_ID`: Product variant ID for Pro tier
+- `LEMONSQUEEZY_WEBHOOK_SECRET`: Webhook signing secret for signature verification
 
 ### Frontend Libraries
 - Radix UI primitives for accessible components
