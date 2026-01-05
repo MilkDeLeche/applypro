@@ -1,4 +1,4 @@
-import { useProfile, useUpdateProfile, useAddExperience, useDeleteExperience, useAddEducation, useDeleteEducation, useClearProfileData, useDeleteAccount } from "@/hooks/use-profile";
+import { useProfile, useUpdateProfile, useAddExperience, useDeleteExperience, useAddEducation, useDeleteEducation, useClearProfileData } from "@/hooks/use-profile";
 import { ResumeUpload } from "@/components/ResumeUpload";
 import { ProfileSwitcher } from "@/components/ProfileSwitcher";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Trash2, Briefcase, GraduationCap, Link2, Linkedin, User as UserIcon, Mail, Phone, Calendar, RotateCcw, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Briefcase, GraduationCap, Link2, Linkedin, User as UserIcon, Mail, Phone, Calendar, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
@@ -33,7 +33,7 @@ export default function Dashboard() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-4xl md:text-5xl font-bold font-display tracking-tight text-foreground"
               >
-                Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-violet-600">{data.user.firstName || data.user.email || "there"}</span>
+                Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-violet-600">{data.user.firstName && data.user.lastName ? `${data.user.firstName} ${data.user.lastName}` : data.user.firstName || data.user.email || "there"}</span>
               </motion.h1>
               <motion.p 
                 initial={{ opacity: 0, y: 20 }}
@@ -141,13 +141,6 @@ export default function Dashboard() {
               <ClearResumeButton />
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35 }}
-            >
-              <DeleteAccountDialog />
-            </motion.div>
           </div>
 
           {/* Right Column: Experience & Education */}
@@ -526,80 +519,6 @@ function ClearResumeButton() {
   );
 }
 
-function DeleteAccountDialog() {
-  const { mutate: deleteAccount, isPending } = useDeleteAccount();
-  const [open, setOpen] = useState(false);
-  const [confirmText, setConfirmText] = useState("");
-
-  const handleDelete = () => {
-    if (confirmText === "DELETE") {
-      deleteAccount();
-    }
-  };
-
-  return (
-    <Card className="border-destructive/30 bg-destructive/5">
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive shrink-0">
-            <AlertTriangle className="w-4 h-4" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-destructive">Danger Zone</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Permanently delete your account and all data.
-            </p>
-            <Dialog open={open} onOpenChange={(o) => { setOpen(o); setConfirmText(""); }}>
-              <DialogTrigger asChild>
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
-                  className="mt-3"
-                  data-testid="button-delete-account"
-                >
-                  Delete Account
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className="text-destructive">Delete Your Account</DialogTitle>
-                  <DialogDescription>
-                    This action cannot be undone. Your account, all profiles, experience, and education data will be permanently deleted.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-delete">Type DELETE to confirm</Label>
-                    <Input 
-                      id="confirm-delete" 
-                      value={confirmText}
-                      onChange={(e) => setConfirmText(e.target.value)}
-                      placeholder="DELETE"
-                      data-testid="input-confirm-delete"
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      onClick={handleDelete}
-                      disabled={confirmText !== "DELETE" || isPending}
-                      data-testid="button-confirm-delete"
-                    >
-                      {isPending ? "Deleting..." : "Delete Account"}
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 function DashboardSkeleton() {
   return (

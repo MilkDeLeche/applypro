@@ -11,6 +11,7 @@ import Dashboard from "@/pages/Dashboard";
 import Landing from "@/pages/Landing";
 import ExtensionGuide from "@/pages/ExtensionGuide";
 import Pricing from "@/pages/pricing";
+import AccountSettings from "@/pages/AccountSettings";
 import NotFound from "@/pages/not-found";
 
 function LoadingSpinner() {
@@ -38,6 +39,10 @@ function AppContent() {
         
         <Route path="/pricing">
           <Pricing />
+        </Route>
+        
+        <Route path="/settings">
+          {user ? <AccountSettings /> : <Landing />}
         </Route>
         
         <Route path="/dashboard">

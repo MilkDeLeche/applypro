@@ -5,7 +5,8 @@ import {
   LogOut, 
   LayoutDashboard, 
   Puzzle, 
-  UserCircle 
+  UserCircle,
+  Settings
 } from "lucide-react";
 
 export function Navigation() {
@@ -47,6 +48,16 @@ export function Navigation() {
                 >
                   <Puzzle className="w-4 h-4" />
                   Extension
+                </Button>
+              </Link>
+              <Link href="/settings">
+                <Button 
+                  variant={location === "/settings" ? "secondary" : "ghost"} 
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Settings className="w-4 h-4" />
+                  Settings
                 </Button>
               </Link>
             </div>
