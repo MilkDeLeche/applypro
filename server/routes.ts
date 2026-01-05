@@ -5,8 +5,10 @@ import { api, errorSchemas } from "@shared/routes";
 import { z } from "zod";
 import { setupAuth, registerAuthRoutes } from "./auth";
 import multer from "multer";
-// Dynamic import for pdf-parse (CommonJS module)
-let pdfParse: any;
+// pdf-parse import (CommonJS module)
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 import fs from "fs";
 import { OpenAI } from "openai";
 
@@ -67,12 +69,6 @@ export async function registerRoutes(
       // Ensure uploads directory exists
       if (!fs.existsSync('/tmp/uploads')) {
         fs.mkdirSync('/tmp/uploads', { recursive: true });
-      }
-      
-      // Dynamically import pdf-parse (CommonJS compatibility)
-      if (!pdfParse) {
-        const pdfModule = await import("pdf-parse");
-        pdfParse = pdfModule.default || pdfModule;
       }
       
       const dataBuffer = fs.readFileSync(req.file.path);
