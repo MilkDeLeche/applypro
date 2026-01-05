@@ -149,10 +149,10 @@ export default function Dashboard() {
               </div>
               
               <div className="space-y-4">
-                {data.experience.length === 0 ? (
+                {(!data.activeProfile?.experience || data.activeProfile.experience.length === 0) ? (
                   <EmptyState title="No experience added" description="Upload your resume or add manually." />
                 ) : (
-                  data.experience.map((exp) => (
+                  data.activeProfile.experience.map((exp: any) => (
                     <ExperienceCard key={exp.id} data={exp} />
                   ))
                 )}
@@ -174,10 +174,10 @@ export default function Dashboard() {
               </div>
               
               <div className="space-y-4">
-                {data.education.length === 0 ? (
+                {(!data.activeProfile?.education || data.activeProfile.education.length === 0) ? (
                   <EmptyState title="No education added" description="Add your degrees and schools." />
                 ) : (
-                  data.education.map((edu) => (
+                  data.activeProfile.education.map((edu: any) => (
                     <EducationCard key={edu.id} data={edu} />
                   ))
                 )}

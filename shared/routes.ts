@@ -25,8 +25,16 @@ export const api = {
       responses: {
         200: z.object({
           user: z.custom<typeof users.$inferSelect>(),
-          experience: z.array(z.custom<typeof experience.$inferSelect>()),
-          education: z.array(z.custom<typeof education.$inferSelect>()),
+          profiles: z.array(z.object({
+            profile: z.any(),
+            experience: z.array(z.custom<typeof experience.$inferSelect>()),
+            education: z.array(z.custom<typeof education.$inferSelect>()),
+          })),
+          activeProfile: z.object({
+            profile: z.any(),
+            experience: z.array(z.custom<typeof experience.$inferSelect>()),
+            education: z.array(z.custom<typeof education.$inferSelect>()),
+          }).nullable(),
         }),
         401: errorSchemas.unauthorized,
       },
