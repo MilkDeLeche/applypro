@@ -21,7 +21,7 @@ import { OpenAI } from "openai";
 // If not, we might need to configure the base URL.
 // Replit AI usually sets OPENAI_API_KEY to a special token and base URL.
 
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: '/tmp/uploads/' });
 
 export async function registerRoutes(
   httpServer: Server,
