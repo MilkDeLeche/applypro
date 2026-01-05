@@ -72,7 +72,7 @@ export async function registerRoutes(
       }
       
       const dataBuffer = fs.readFileSync(req.file.path);
-      const pdfData = await pdfParse(dataBuffer);
+      const pdfData = await pdfParse.PDFParse(dataBuffer);
       const text = pdfData.text;
 
       // Clean up file
