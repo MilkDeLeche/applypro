@@ -166,6 +166,19 @@ export class DatabaseStorage implements IStorage {
     return { allowed: remaining > 0, remaining, isPremium: false };
   }
 
+  async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.stripeCustomerId, customerId));
+    return user;
+  }
+
+  async resetUsage(userId: string): Promise<void> {
+    await db.update(users).set({
+      resumeParsesThisPeriod: 0,
+      autofillsThisPeriod: 0,
+      periodStart: new Date()
+    }).where(eq(users.id, userId));
+  }
+
   async getSubscription(subscriptionId: string) {
     const result = await db.execute(
       sql`SELECT * FROM stripe.subscriptions WHERE id = ${subscriptionId}`
