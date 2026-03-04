@@ -7,6 +7,7 @@ import { I18nProvider } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
 import { Navigation } from "@/components/Navigation";
 import { Loader2 } from "lucide-react";
+import { apiUrl } from "@/lib/api";
 
 import Dashboard from "@/pages/Dashboard";
 import Landing from "@/pages/Landing";
@@ -23,6 +24,11 @@ function LoadingSpinner() {
   );
 }
 
+function AuthRedirect({ to }: { to: string }) {
+  window.location.href = apiUrl(to);
+  return <LoadingSpinner />;
+}
+
 function AppContent() {
   const { user, isLoading } = useAuth();
 
@@ -34,6 +40,14 @@ function AppContent() {
     <>
       {user && <Navigation />}
       <Switch>
+        {/* Auth redirects - send to backend */}
+        <Route path="/login">
+          <AuthRedirect to="/api/login" />
+        </Route>
+        <Route path="/api/callback">
+          <AuthRedirect to="/api/callback" />
+        </Route>
+
         <Route path="/extension">
           {user ? <ExtensionGuide /> : <Landing />}
         </Route>
