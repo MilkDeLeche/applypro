@@ -1,4 +1,6 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
@@ -7,6 +9,14 @@ import { getStripeSync } from './stripeClient';
 import { WebhookHandlers } from './webhookHandlers';
 
 const app = express();
+
+// CORS: allow frontend (Vercel) when FRONTEND_URL is set, or same-origin
+const frontendUrl = process.env.FRONTEND_URL;
+if (frontendUrl) {
+  app.use(cors({ origin: frontendUrl, credentials: true }));
+} else {
+  app.use(cors({ origin: true, credentials: true })); // allow same-origin in dev
+}
 const httpServer = createServer(app);
 
 declare module "http" {
@@ -134,11 +144,15 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // In split deployment (Vercel + Railway): FRONTEND_URL is set, serve API only
+  // In monolithic: serve React build from this server
   if (process.env.NODE_ENV === "production") {
-    serveStatic(app);
+    if (frontendUrl) {
+      // API-only: redirect root to frontend
+      app.get("/", (_req, res) => res.redirect(302, frontendUrl));
+    } else {
+      serveStatic(app);
+    }
   } else {
     const { setupVite } = await import("./vite");
     await setupVite(httpServer, app);

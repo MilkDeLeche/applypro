@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Zap, ShieldCheck, MousePointerClick, ArrowRight, Lock, Trash2, Globe, Ban } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { apiUrl } from "@/lib/api";
 
 export default function Landing() {
   const { t } = useI18n();
@@ -66,7 +67,7 @@ export default function Landing() {
               size="lg" 
               variant="gradient"
               className="w-full sm:w-auto text-lg h-14 px-8"
-              onClick={() => window.location.href = "/api/login"}
+              onClick={() => window.location.href = apiUrl("/api/login")}
             >
               {t("landing.hero.cta")} <ArrowRight className="ml-2 w-5 h-5" />
             </Button>

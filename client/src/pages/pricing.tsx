@@ -7,6 +7,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { useI18n, PRICING, type Country } from "@/lib/i18n";
+import { apiUrl } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type UsageData = {
@@ -35,14 +36,14 @@ export default function Pricing() {
   const { data: paymentData } = useQuery<PaymentProvidersData>({
     queryKey: ['/api/payment-providers', country],
     queryFn: async () => {
-      const res = await fetch(`/api/payment-providers?country=${country}`);
+      const res = await fetch(apiUrl(`/api/payment-providers?country=${country}`));
       return res.json();
     }
   });
 
   const stripeCheckoutMutation = useMutation({
     mutationFn: async (tier: 'standard' | 'pro') => {
-      const res = await fetch('/api/checkout', {
+      const res = await fetch(apiUrl('/api/checkout'), {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -63,7 +64,7 @@ export default function Pricing() {
 
   const lemonSqueezyCheckoutMutation = useMutation({
     mutationFn: async (tier: 'standard' | 'pro') => {
-      const res = await fetch('/api/lemonsqueezy/checkout', {
+      const res = await fetch(apiUrl('/api/lemonsqueezy/checkout'), {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -84,7 +85,7 @@ export default function Pricing() {
 
   const handleUpgrade = (tier: 'standard' | 'pro') => {
     if (!user) {
-      window.location.href = '/api/login';
+      window.location.href = apiUrl('/api/login');
       return;
     }
     
