@@ -50,7 +50,7 @@ export function Navigation() {
                       S
                     </div>
                     <span className="text-xl font-bold font-display tracking-tight text-foreground">
-                      SudoFillr
+                      PostulaPro
                     </span>
                   </div>
                   
@@ -92,7 +92,7 @@ export function Navigation() {
                 S
               </div>
               <span className="text-xl font-bold font-display tracking-tight text-foreground">
-                SudoFillr
+                PostulaPro
               </span>
             </Link>
 

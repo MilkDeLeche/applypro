@@ -1,4 +1,4 @@
-# SudoFillr / ApplyPro — Complete Setup Guide
+# PostulaPro — Complete Setup Guide
 
 Follow these steps **in order**. Your URLs:
 - **Frontend (Vercel):** https://applyprofrontend.vercel.app
@@ -55,7 +55,7 @@ Follow these steps **in order**. Your URLs:
 4. Click **+ Create Credentials** → **OAuth client ID**
 5. If prompted, configure the **OAuth consent screen** first:
    - User type: **External** (for real users)
-   - App name: **PostulaPro** (or SudoFillr)
+   - App name: **PostulaPro**
    - Add your email as developer contact
    - Add scopes: `email`, `profile`, `openid`
    - Save
@@ -85,7 +85,7 @@ Follow these steps **in order**. Your URLs:
 
 1. Go to [railway.app](https://railway.app) and sign in
 2. **New Project** → **Deploy from GitHub repo**
-3. Connect GitHub and select your SudoFillr/ApplyPro repo
+3. Connect GitHub and select your PostulaPro repo
 4. Railway will detect Node.js and deploy
 
 ### 3.2 Add environment variables

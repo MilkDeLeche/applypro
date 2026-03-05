@@ -72,12 +72,12 @@ function getLocaleFromCountry(country: Country): Locale {
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [country, setCountryState] = useState<Country>(() => {
-    const saved = localStorage.getItem("sudofillr-country");
+    const saved = localStorage.getItem("postulapro-country");
     return (saved as Country) || detectCountry();
   });
   
   const [locale, setLocale] = useState<Locale>(() => {
-    const saved = localStorage.getItem("sudofillr-locale");
+    const saved = localStorage.getItem("postulapro-locale");
     return (saved as Locale) || getLocaleFromCountry(country);
   });
 
@@ -88,8 +88,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    localStorage.setItem("sudofillr-country", country);
-    localStorage.setItem("sudofillr-locale", locale);
+    localStorage.setItem("postulapro-country", country);
+    localStorage.setItem("postulapro-locale", locale);
   }, [country, locale]);
 
   const t = (key: string): string => {
@@ -179,9 +179,9 @@ const TRANSLATIONS: Record<Locale, TranslationKeys> = {
     "landing.benefit.confidence": "The confidence boost when you can send out 50 high quality applications while just drinking your morning coffee.",
     "landing.benefit.first": "Beating the competition by being the first one to apply the second a new job drops.",
     "landing.pain.section.pain": "Sound familiar?",
-    "landing.pain.section.benefit": "With SudoFillr",
+    "landing.pain.section.benefit": "With PostulaPro",
     "landing.manifesto.title": "We're one of you.",
-    "landing.manifesto.body": "We hate filling out the same information right after inserting our resume. We built SudoFillr because job hunting shouldn't feel like a second full-time job that pays nothing. Upload once. Fill everywhere. Cover letters, interview prep—we've got you. Apply to more roles in less time, and land the offer you deserve.",
+    "landing.manifesto.body": "We hate filling out the same information right after inserting our resume. We built PostulaPro because job hunting shouldn't feel like a second full-time job that pays nothing. Upload once. Fill everywhere. Cover letters, interview prep—we've got you. Apply to more roles in less time, and land the offer you deserve.",
     "landing.pricing.title": "Invest in your career speed",
     "landing.pricing.subtitle": "Stop doing free data entry. Pick the engine that fits your job hunt.",
     "landing.pricing.free.desc": "Strict manual. Type your words.",
@@ -257,7 +257,7 @@ const TRANSLATIONS: Record<Locale, TranslationKeys> = {
     "settings.title": "Account Settings",
     "settings.subtitle": "Manage your account preferences and settings.",
     "settings.privacy.title": "Your Privacy Commitment",
-    "settings.privacy.desc": "At SudoFillr, your privacy is not a feature - it's our foundation. Unlike other autofill tools, we never monetize your data.",
+    "settings.privacy.desc": "At PostulaPro, your privacy is not a feature - it's our foundation. Unlike other autofill tools, we never monetize your data.",
     "settings.delete.title": "Danger Zone",
     "settings.delete.button": "Delete Account",
     "settings.delete.confirm": "Type DELETE to confirm",
@@ -313,9 +313,9 @@ const TRANSLATIONS: Record<Locale, TranslationKeys> = {
     "landing.benefit.confidence": "La tranquilidad y confianza de poder enviar 50 postulaciones de alta calidad mientras te tomas tu café en la mañana.",
     "landing.benefit.first": "Ganarle a la competencia siendo el primero en aplicar justo en el segundo que publican la oferta de trabajo.",
     "landing.pain.section.pain": "¿Te suena familiar?",
-    "landing.pain.section.benefit": "Con SudoFillr",
+    "landing.pain.section.benefit": "Con PostulaPro",
     "landing.manifesto.title": "Somos uno de ustedes.",
-    "landing.manifesto.body": "Odiamos llenar la misma información después de subir nuestro currículum. Creamos SudoFillr porque buscar empleo no debería sentirse como un segundo trabajo a tiempo completo que no paga nada. Sube una vez. Llena en todos lados. Cartas de presentación, preparación para entrevistas—te tenemos. Postula a más empleos en menos tiempo y consigue la oferta que mereces.",
+    "landing.manifesto.body": "Odiamos llenar la misma información después de subir nuestro currículum. Creamos PostulaPro porque buscar empleo no debería sentirse como un segundo trabajo a tiempo completo que no paga nada. Sube una vez. Llena en todos lados. Cartas de presentación, preparación para entrevistas—te tenemos. Postula a más empleos en menos tiempo y consigue la oferta que mereces.",
     "landing.features.persona.title": "Perfiles Multi-Persona",
     "landing.features.persona.desc": "Guarda diferentes currículums para diferentes roles. Cambia de perfil en un clic.",
     "landing.features.persona.bullet1": "Guarda diferentes resumes para diferentes roles",
@@ -399,7 +399,7 @@ const TRANSLATIONS: Record<Locale, TranslationKeys> = {
     "settings.title": "Configuración de Cuenta",
     "settings.subtitle": "Administra tus preferencias y configuración de cuenta.",
     "settings.privacy.title": "Tu Compromiso de Privacidad",
-    "settings.privacy.desc": "En SudoFillr, tu privacidad no es una característica, es nuestra base. A diferencia de otras herramientas, nunca monetizamos tus datos.",
+    "settings.privacy.desc": "En PostulaPro, tu privacidad no es una característica, es nuestra base. A diferencia de otras herramientas, nunca monetizamos tus datos.",
     "settings.delete.title": "Zona de Peligro",
     "settings.delete.button": "Eliminar Cuenta",
     "settings.delete.confirm": "Escribe ELIMINAR para confirmar",
@@ -455,9 +455,9 @@ const TRANSLATIONS: Record<Locale, TranslationKeys> = {
     "landing.benefit.confidence": "La tranquilidad y confianza de poder enviar 50 postulaciones de alta calidad mientras te tomas tu café en la mañana.",
     "landing.benefit.first": "Ganarle a la competencia siendo el primero en aplicar justo en el segundo que publican la oferta de trabajo.",
     "landing.pain.section.pain": "¿Te suena familiar?",
-    "landing.pain.section.benefit": "Con SudoFillr",
+    "landing.pain.section.benefit": "Con PostulaPro",
     "landing.manifesto.title": "Somos uno de ustedes.",
-    "landing.manifesto.body": "Odiamos llenar la misma información después de subir nuestro currículum. Creamos SudoFillr porque buscar pega no debería sentirse como un segundo trabajo a tiempo completo que no paga nada. Sube una vez. Llena en todos lados. Cartas de presentación, preparación para entrevistas—te tenemos. Postula a más pegas en menos tiempo y consigue la oferta que mereces.",
+    "landing.manifesto.body": "Odiamos llenar la misma información después de subir nuestro currículum. Creamos PostulaPro porque buscar pega no debería sentirse como un segundo trabajo a tiempo completo que no paga nada. Sube una vez. Llena en todos lados. Cartas de presentación, preparación para entrevistas—te tenemos. Postula a más pegas en menos tiempo y consigue la oferta que mereces.",
     "landing.features.persona.title": "Perfiles Multi-Persona",
     "landing.features.persona.desc": "Guarda diferentes currículums para diferentes roles. Cambia de perfil en un clic.",
     "landing.features.persona.bullet1": "Guarda diferentes resumes para diferentes roles",
@@ -541,7 +541,7 @@ const TRANSLATIONS: Record<Locale, TranslationKeys> = {
     "settings.title": "Configuración de Cuenta",
     "settings.subtitle": "Administra tus preferencias y configuración de cuenta.",
     "settings.privacy.title": "Tu Compromiso de Privacidad",
-    "settings.privacy.desc": "En SudoFillr, tu privacidad no es una característica, es nuestra base. A diferencia de otras herramientas, nunca monetizamos tus datos. Así de simple.",
+    "settings.privacy.desc": "En PostulaPro, tu privacidad no es una característica, es nuestra base. A diferencia de otras herramientas, nunca monetizamos tus datos. Así de simple.",
     "settings.delete.title": "Zona de Peligro",
     "settings.delete.button": "Eliminar Cuenta",
     "settings.delete.confirm": "Escribe ELIMINAR para confirmar",

@@ -12,7 +12,7 @@
 
 1. Go to [railway.app](https://railway.app) and sign in
 2. **New Project** → **Deploy from GitHub repo** → connect your repo
-3. Select the SudoFillr repository
+3. Select the PostulaPro repository
 4. Railway will detect Node.js and use the build/start commands
 
 ### Environment Variables (Railway Dashboard → Variables)
@@ -20,12 +20,12 @@
 | Variable | Value |
 |----------|-------|
 | `DATABASE_URL` | Your Supabase connection string |
-| `FRONTEND_URL` | Your Vercel URL (e.g. `https://sudofillr.vercel.app`) |
+| `FRONTEND_URL` | Your Vercel URL (e.g. `https://postulapro.vercel.app`) |
 | `SESSION_SECRET` | Random string (e.g. `openssl rand -hex 32`) |
 
 ### Get your Railway URL
 
-After deploy, Railway gives you a URL like `https://sudofillr-production.up.railway.app`. Copy this — you need it for Vercel.
+After deploy, Railway gives you a URL like `https://postulapro-production.up.railway.app`. Copy this — you need it for Vercel.
 
 ---
 
@@ -43,9 +43,9 @@ After deploy, Railway gives you a URL like `https://sudofillr-production.up.rail
 
 | Variable | Value |
 |----------|-------|
-| `VITE_API_URL` | Your Railway URL (e.g. `https://sudofillr-production.up.railway.app`) |
+| `VITE_API_URL` | Your Railway URL (e.g. `https://postulapro-production.up.railway.app`) |
 
-4. Deploy. Vercel will give you a URL like `https://sudofillr.vercel.app`
+4. Deploy. Vercel will give you a URL like `https://postulapro.vercel.app`
 
 ---
 

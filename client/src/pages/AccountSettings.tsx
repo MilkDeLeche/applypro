@@ -63,7 +63,7 @@ function PrivacySection() {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          At SudoFillr, your privacy is not a feature - it's our foundation. Unlike other autofill tools, we never monetize your data.
+          At PostulaPro, your privacy is not a feature - it's our foundation. Unlike other autofill tools, we never monetize your data.
         </p>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

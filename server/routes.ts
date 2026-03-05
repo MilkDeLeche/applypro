@@ -425,12 +425,12 @@ export async function registerRoutes(
 
       const plans = {
         standard: {
-          name: 'SudoFillr Standard',
+          name: 'PostulaPro Standard',
           description: 'Unlimited resume parsing and autofills for 1 year',
           amount: 7000 // $70/year
         },
         pro: {
-          name: 'SudoFillr Pro',
+          name: 'PostulaPro Pro',
           description: 'Unlimited everything + 5 resume profiles for 1 year',
           amount: 8000 // $80/year
         }

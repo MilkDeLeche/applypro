@@ -1,4 +1,4 @@
-# SudoFillr / ApplyPro — Full App Context for AI (Gemini, etc.)
+# PostulaPro — Full App Context for AI (Gemini, etc.)
 
 **Use this document when prompting AI to update the landing page or any part of the app. The app is NOT starting from scratch — it's a deployed, working product.**
 
@@ -6,7 +6,7 @@
 
 ## What This App Is
 
-**SudoFillr** (also branded as **ApplyPro**) is an **AI-powered job application autofill** SaaS. Users upload their resume once; AI parses it; a Chrome extension fills job applications on any site. Target markets: US, Mexico, Chile (LATAM).
+**PostulaPro** is an **AI-powered job application autofill** SaaS. Users upload their resume once; AI parses it; a Chrome extension fills job applications on any site. Target markets: US, Mexico, Chile (LATAM).
 
 ---
 
@@ -103,7 +103,7 @@ shared/
 1. **Hero** — Badge ("AI-Powered Job Applications"), headline ("Apply to Jobs **10x Faster**"), subtitle, trust badge, CTA ("Get Started Free"), secondary CTA ("How it Works")
 2. **Features** — 3 cards: AI Parsing, One-Click Fill, Privacy First
 3. **Privacy Trust** — 4 cards: Never Sold, Delete Anytime, Encrypted, LATAM Support
-4. **Footer** — Copyright © SudoFillr
+4. **Footer** — Copyright © PostulaPro
 
 **All text:** Uses `useI18n()` and `t("landing.hero.title")` etc. Translations live in `client/src/lib/i18n.tsx`.
 
@@ -182,7 +182,7 @@ privacy.latam.desc
 2. **Landing page:** `client/src/pages/Landing.tsx`. Use existing `FeatureCard` and `PrivacyCard` (or similar) patterns.
 3. **All user-facing text:** Use `t("key")` from `useI18n()`. Add new keys in `i18n.tsx` for en, es-MX, es-CL.
 4. **Styling:** Stay with Tailwind, existing color tokens, and Framer Motion.
-5. **Brand:** SudoFillr / ApplyPro — AI job application autofill, resume parsing, Chrome extension, privacy-first.
+5. **Brand:** PostulaPro — AI job application autofill, resume parsing, Chrome extension, privacy-first.
 6. **Deployment:** Vercel frontend, Railway backend. `VITE_API_URL` for API base. Auth via Supabase (Google OAuth); frontend uses `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 
 ---

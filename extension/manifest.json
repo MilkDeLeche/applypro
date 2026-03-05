@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "SudoFillr - Smart Job Autofill",
+  "name": "PostulaPro - Smart Job Autofill",
   "version": "1.0",
-  "description": "Autofill job applications with your profile data from SudoFillr.",
+  "description": "Autofill job applications with your profile data from PostulaPro.",
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": ["<all_urls>"],
   "action": {

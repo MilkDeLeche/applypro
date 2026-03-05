@@ -102,7 +102,7 @@ export function LandingFooter() {
 
         <motion.div variants={itemVariants} className="border-t border-white/20 pt-8">
           <p className="text-center text-white/60 text-sm">
-            © {new Date().getFullYear()} PostulaPro / SudoFillr. {t("landing.privacy.tagline")}
+            © {new Date().getFullYear()} PostulaPro. {t("landing.privacy.tagline")}
           </p>
         </motion.div>
       </motion.div>

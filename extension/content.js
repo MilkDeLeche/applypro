@@ -1,10 +1,10 @@
-// SudoFillr Content Script
+// PostulaPro Content Script
 // Adds floating autofill button and handles form filling
 
 (function() {
   // Prevent multiple injections
-  if (window.sudoFillrInjected) return;
-  window.sudoFillrInjected = true;
+  if (window.postulaProInjected) return;
+  window.postulaProInjected = true;
 
   let floatingButton = null;
   let isLoading = false;
@@ -14,7 +14,7 @@
     if (floatingButton) return;
 
     floatingButton = document.createElement('div');
-    floatingButton.id = 'sudofillr-button';
+    floatingButton.id = 'postulapro-button';
     floatingButton.innerHTML = `
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -23,13 +23,13 @@
         <line x1="16" y1="17" x2="8" y2="17"></line>
         <polyline points="10 9 9 9 8 9"></polyline>
       </svg>
-      <span class="sudofillr-text">Fill</span>
+      <span class="postulapro-text">Fill</span>
     `;
     
     // Apply styles
     const style = document.createElement('style');
     style.textContent = `
-      #sudofillr-button {
+      #postulapro-button {
         position: fixed;
         bottom: 20px;
         right: 20px;
@@ -51,38 +51,38 @@
         transform: translateY(10px) scale(0.95);
         pointer-events: none;
       }
-      #sudofillr-button.visible {
+      #postulapro-button.visible {
         opacity: 1;
         transform: translateY(0) scale(1);
         pointer-events: auto;
       }
-      #sudofillr-button:hover {
+      #postulapro-button:hover {
         transform: translateY(-2px) scale(1.02);
         box-shadow: 0 6px 16px rgba(99, 102, 241, 0.5), 0 3px 6px rgba(0,0,0,0.15);
       }
-      #sudofillr-button:active {
+      #postulapro-button:active {
         transform: translateY(0) scale(0.98);
       }
-      #sudofillr-button.loading {
+      #postulapro-button.loading {
         pointer-events: none;
         opacity: 0.7;
       }
-      #sudofillr-button.loading .sudofillr-text {
+      #postulapro-button.loading .postulapro-text {
         display: none;
       }
-      #sudofillr-button.loading::after {
+      #postulapro-button.loading::after {
         content: 'Filling...';
       }
-      #sudofillr-button.success {
+      #postulapro-button.success {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       }
-      #sudofillr-button.success .sudofillr-text {
+      #postulapro-button.success .postulapro-text {
         display: none;
       }
-      #sudofillr-button.success::after {
+      #postulapro-button.success::after {
         content: 'Done!';
       }
-      #sudofillr-button svg {
+      #postulapro-button svg {
         flex-shrink: 0;
       }
     `;
@@ -125,7 +125,7 @@
       const { serverUrl } = await chrome.storage.sync.get(['serverUrl']);
       
       if (!serverUrl) {
-        alert('Please configure SudoFillr: Click the extension icon and enter your server URL.');
+        alert('Please configure PostulaPro: Click the extension icon and enter your server URL.');
         isLoading = false;
         floatingButton.classList.remove('loading');
         return;
@@ -136,7 +136,7 @@
       });
       
       if (response.status === 401) {
-        alert('Please log in to SudoFillr first, then try again.');
+        alert('Please log in to PostulaPro first, then try again.');
         window.open(serverUrl, '_blank');
         isLoading = false;
         floatingButton.classList.remove('loading');
@@ -166,7 +166,7 @@
       }, 2000);
       
     } catch (err) {
-      console.error('SudoFillr error:', err);
+      console.error('PostulaPro error:', err);
       alert('Error filling form. Please check your connection and try again.');
       floatingButton.classList.remove('loading');
     }
@@ -211,16 +211,16 @@
   // ============================================
 
   function fillForm(profile) {
-    console.log("SudoFillr: Starting autofill with profile data:", profile);
+    console.log("PostulaPro: Starting autofill with profile data:", profile);
     
     // Get user data from the nested structure
     const user = profile.user || profile;
     const experience = profile.experience || [];
     const education = profile.education || [];
     
-    console.log("SudoFillr: User data:", user);
-    console.log("SudoFillr: Experience:", experience);
-    console.log("SudoFillr: Education:", education);
+    console.log("PostulaPro: User data:", user);
+    console.log("PostulaPro: Experience:", experience);
+    console.log("PostulaPro: Education:", education);
     
     // Helper to set value and trigger events for React/Vue/Angular compatibility
     function setValue(input, value) {
@@ -247,7 +247,7 @@
       input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
       input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
       
-      console.log(`SudoFillr: Filled "${input.name || input.id || 'unknown'}" with "${value}"`);
+      console.log(`PostulaPro: Filled "${input.name || input.id || 'unknown'}" with "${value}"`);
       return true;
     }
     
@@ -580,7 +580,7 @@
     const activeProfile = profile.profile || profile;
     const coverLetter = activeProfile.coverLetter;
     if (coverLetter) {
-      console.log("SudoFillr: Looking for cover letter fields...");
+      console.log("PostulaPro: Looking for cover letter fields...");
       const coverLetterInputs = Array.from(inputs).filter(i => {
         return i.tagName === 'TEXTAREA' && 
           matchesField(i, ['coverletter', 'cover_letter', 'cover-letter', 'coverlettertext', 'carta_presentacion', 'carta-presentacion', 'cartapresentacion', 'motivation', 'motivationletter', 'whyhire', 'why_hire', 'about_yourself', 'aboutyourself', 'tell_us', 'tellus']);
@@ -605,11 +605,11 @@
       coverLetterInputs.forEach(textarea => {
         if (setValue(textarea, coverLetter)) {
           filledCount++;
-          console.log("SudoFillr: Filled cover letter field");
+          console.log("PostulaPro: Filled cover letter field");
         }
       });
     }
     
-    console.log(`SudoFillr: Autofill complete! Filled ${filledCount} fields.`);
+    console.log(`PostulaPro: Autofill complete! Filled ${filledCount} fields.`);
   }
 })();

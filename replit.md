@@ -1,8 +1,8 @@
-# SudoFillr
+# PostulaPro
 
 ## Overview
 
-SudoFillr is an AI-powered job application autofill tool. Users upload their resume (PDF), which is parsed using GPT-4o to extract structured profile data (personal info, work experience, education). This data is stored in a PostgreSQL database and can be accessed by a companion Chrome extension to automatically fill job application forms on websites.
+PostulaPro is an AI-powered job application autofill tool. Users upload their resume (PDF), which is parsed using GPT-4o to extract structured profile data (personal info, work experience, education). This data is stored in a PostgreSQL database and can be accessed by a companion Chrome extension to automatically fill job application forms on websites.
 
 The application follows a full-stack architecture with a React frontend, Express backend, PostgreSQL database, and a Chrome extension for browser-based autofill functionality.
 

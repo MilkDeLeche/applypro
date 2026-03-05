@@ -2,7 +2,7 @@ This is the smart move. Replit’s AI agent is very good at setting up the "heav
 Here is a master prompt you can paste directly into the Replit AI Agent. I have designed it to be specific about the "Multiple Jobs" problem and the "PDF Parsing" requirement so it doesn't give you generic code.
 📋 The Prompt to Paste into Replit
 > Role: You are an expert Full-Stack Developer specializing in Chrome Extensions and Python Flask Backends.
-> Project: Build a job application autofill tool called "SudoFillr".
+> Project: Build a job application autofill tool called "PostulaPro".
 > The Architecture:
 >  * Backend (Python/Flask on Replit):
 >    * Create a Flask server with a database (SQLite).
@@ -29,6 +29,6 @@ Here is a master prompt you can paste directly into the Replit AI Agent. I have 
 > 
 What to expect when you run this
  * Replit will ask for an OpenAI API Key: To do the "Smart Parsing" (turning raw text into JSON), it usually needs a brain like GPT. If you don't have a key, tell Replit: "Use standard Regex parsing instead of AI for now to keep it free."
- * The URL: Replit will give you a web address (like https://sudofillr.username.repl.co). You will need to copy-paste that into your extension code so the extension knows where to send the PDF.
+ * The URL: Replit will give you a web address (like https://postulapro.username.repl.co). You will need to copy-paste that into your extension code so the extension knows where to send the PDF.
  * The "Multiple Jobs" Logic: This is the hardest part. Replit will likely give you a decent starting point, but you might still need to tweak the JavaScript to handle weird sites like Workday perfectly.
 This approach gives you the Database and PDF Reader you wanted, taking the load off your local computer. Go for it!

@@ -65,7 +65,7 @@ export async function createLemonSqueezyCheckout(params: CreateCheckoutParams) {
     productOptions: {
       redirectUrl: successUrl,
       receiptButtonText: "Go to Dashboard",
-      receiptThankYouNote: "Thank you for subscribing to SudoFillr!",
+      receiptThankYouNote: "Thank you for subscribing to PostulaPro!",
     },
   });
   

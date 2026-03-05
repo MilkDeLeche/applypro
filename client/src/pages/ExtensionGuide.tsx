@@ -16,7 +16,7 @@ export default function ExtensionGuide() {
   const steps = [
     {
       title: "Install from Chrome Web Store",
-      description: "Add the SudoFillr extension to Chrome with one click.",
+      description: "Add the PostulaPro extension to Chrome with one click.",
       icon: <Chrome className="w-6 h-6 text-primary" />,
       action: (
         <Button variant="default" size="sm" className="mt-3" disabled>
@@ -27,7 +27,7 @@ export default function ExtensionGuide() {
     },
     {
       title: "Pin the Extension",
-      description: "Click the puzzle icon in Chrome's toolbar and pin SudoFillr for easy access.",
+      description: "Click the puzzle icon in Chrome's toolbar and pin PostulaPro for easy access.",
       icon: <Puzzle className="w-6 h-6 text-violet-500" />
     },
     {
@@ -42,7 +42,7 @@ export default function ExtensionGuide() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold font-display text-foreground mb-4">
-            Install the SudoFillr Extension
+            Install the PostulaPro Extension
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Add our browser extension to start autofilling job applications instantly.
@@ -120,7 +120,7 @@ export default function ExtensionGuide() {
         >
           <h3 className="text-lg font-semibold text-foreground mb-3">How It Works</h3>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Once connected, visit any job application page. A small SudoFillr button will appear 
+            Once connected, visit any job application page. A small PostulaPro button will appear 
             in the corner when form fields are detected. Click it to instantly fill your information!
           </p>
         </motion.div>

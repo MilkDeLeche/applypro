@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch(apiUrl, { credentials: 'include' });
       
       if (response.status === 401) {
-        setStatus('Please log in to SudoFillr first.', 'error');
+        setStatus('Please log in to PostulaPro first.', 'error');
         window.open(serverUrl, '_blank');
         fillBtn.disabled = false;
         return;
