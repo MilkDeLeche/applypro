@@ -7,7 +7,7 @@ import { I18nProvider } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
 import { Navigation } from "@/components/Navigation";
 import { Loader2 } from "lucide-react";
-import { apiUrl } from "@/lib/api";
+import { signIn } from "@/lib/auth";
 
 import Dashboard from "@/pages/Dashboard";
 import Landing from "@/pages/Landing";
@@ -24,8 +24,8 @@ function LoadingSpinner() {
   );
 }
 
-function AuthRedirect({ to }: { to: string }) {
-  window.location.href = apiUrl(to);
+function LoginRedirect() {
+  signIn();
   return <LoadingSpinner />;
 }
 
@@ -40,12 +40,9 @@ function AppContent() {
     <>
       {user && <Navigation />}
       <Switch>
-        {/* Auth redirects - send to backend */}
+        {/* Auth - trigger Supabase sign-in */}
         <Route path="/login">
-          <AuthRedirect to="/api/login" />
-        </Route>
-        <Route path="/api/callback">
-          <AuthRedirect to="/api/callback" />
+          <LoginRedirect />
         </Route>
 
         <Route path="/extension">

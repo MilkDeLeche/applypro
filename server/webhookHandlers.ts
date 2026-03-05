@@ -16,7 +16,10 @@ export class WebhookHandlers {
 
     const sync = await getStripeSync();
     const stripe = await getUncachableStripeClient();
-    
+    if (!sync || !stripe) {
+      throw new Error('Stripe not configured');
+    }
+
     const webhookSecret = await sync.getWebhookSecret();
     const event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
     

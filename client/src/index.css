@@ -54,6 +54,43 @@
   }
 }
 
+/* Landing page utilities */
+@layer utilities {
+  .glass {
+    @apply backdrop-blur-md;
+    background: linear-gradient(210deg, rgba(255, 255, 255, 0.15), rgba(0, 0, 0, 0) 30%),
+                linear-gradient(rgba(31, 27, 90, 0.3), rgba(31, 27, 90, 0.2));
+  }
+  .hero-gradient {
+    /* Sky image primary, blue gradient fallback if image fails */
+    background-image: url("/images/landing1.jpg"),
+      linear-gradient(
+        to bottom,
+        rgb(49, 70, 130) 0%,
+        rgb(74, 85, 160) 25%,
+        rgb(124, 154, 211) 50%,
+        rgb(180, 195, 230) 75%,
+        rgb(255, 255, 255) 100%
+      );
+    background-size: cover;
+    background-position: center;
+  }
+  .diagonal-stripes {
+    background: repeating-linear-gradient(45deg, rgb(222, 219, 213), rgb(222, 219, 213) 1px, rgba(255, 255, 255, 0) 1px, rgba(255, 255, 255, 0) 5px);
+  }
+  .dash-pattern {
+    background: repeating-linear-gradient(90deg, rgb(208, 205, 198), rgb(208, 205, 198) 4px, rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0) 8px);
+  }
+  .cta-gradient {
+    background: linear-gradient(270deg, rgb(85, 77, 203) 9.04%, rgb(134, 203, 249) 84.36%, rgb(247, 219, 255) 100%);
+  }
+  .btn-gradient {
+    background: linear-gradient(rgba(255, 255, 255, 0.12) 0px, rgba(255, 255, 255, 0) 100%),
+                radial-gradient(circle at 68% 50%, rgba(133, 125, 250, 0.6) 0px, rgba(0, 0, 0, 0) 50%),
+                linear-gradient(rgb(85, 77, 203) 0px, rgb(74, 67, 176) 100%);
+  }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

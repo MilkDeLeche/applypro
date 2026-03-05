@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { apiUrl } from "@/lib/api";
+import { apiUrl, authFetch } from "@/lib/api";
 import type { UserProfile, InsertExperience, InsertEducation, UpdateProfileRequest } from "@shared/schema";
 
 export function useProfile() {
@@ -11,7 +11,7 @@ export function useProfile() {
   return useQuery({
     queryKey: [api.profile.get.path],
     queryFn: async () => {
-      const res = await fetch(apiUrl(api.profile.get.path), { credentials: "include" });
+      const res = await authFetch(api.profile.get.path);
       if (res.status === 401) return null;
       if (!res.ok) throw new Error("Failed to fetch profile");
       
@@ -28,11 +28,10 @@ export function useUpdateProfile() {
 
   return useMutation({
     mutationFn: async (data: UpdateProfileRequest) => {
-      const res = await fetch(apiUrl(api.profile.update.path), {
+      const res = await authFetch(api.profile.update.path, {
         method: api.profile.update.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-        credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to update profile");
       return api.profile.update.responses[200].parse(await res.json());
@@ -56,10 +55,9 @@ export function useUploadResume() {
       const formData = new FormData();
       formData.append("resume", file);
 
-      const res = await fetch(apiUrl(api.upload.resume.path), {
+      const res = await authFetch(api.upload.resume.path, {
         method: api.upload.resume.method,
         body: formData,
-        credentials: "include",
       });
 
       if (!res.ok) throw new Error("Failed to upload and parse resume");
@@ -81,7 +79,7 @@ export function useAddExperience() {
 
   return useMutation({
     mutationFn: async (data: Omit<InsertExperience, "userId">) => {
-      const res = await fetch(apiUrl(api.experience.create.path), {
+      const res = await authFetch(api.experience.create.path, {
         method: api.experience.create.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -103,8 +101,8 @@ export function useDeleteExperience() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const url = apiUrl(buildUrl(api.experience.delete.path, { id }));
-      const res = await fetch(url, { method: api.experience.delete.method, credentials: "include" });
+      const url = buildUrl(api.experience.delete.path, { id });
+      const res = await authFetch(url, { method: api.experience.delete.method });
       if (!res.ok) throw new Error("Failed to delete experience");
     },
     onSuccess: () => {
@@ -120,11 +118,10 @@ export function useAddEducation() {
 
   return useMutation({
     mutationFn: async (data: Omit<InsertEducation, "userId">) => {
-      const res = await fetch(apiUrl(api.education.create.path), {
+      const res = await authFetch(api.education.create.path, {
         method: api.education.create.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-        credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to add education");
       return api.education.create.responses[201].parse(await res.json());
@@ -142,8 +139,8 @@ export function useDeleteEducation() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const url = apiUrl(buildUrl(api.education.delete.path, { id }));
-      const res = await fetch(url, { method: api.education.delete.method, credentials: "include" });
+      const url = buildUrl(api.education.delete.path, { id });
+      const res = await authFetch(url, { method: api.education.delete.method });
       if (!res.ok) throw new Error("Failed to delete education");
     },
     onSuccess: () => {
@@ -169,7 +166,7 @@ export function useProfiles() {
   return useQuery<ProfilesData>({
     queryKey: ['/api/profiles'],
     queryFn: async () => {
-      const res = await fetch(apiUrl('/api/profiles'), { credentials: 'include' });
+      const res = await authFetch('/api/profiles');
       if (!res.ok) throw new Error('Failed to fetch profiles');
       return res.json();
     },
@@ -182,11 +179,10 @@ export function useCreateProfile() {
 
   return useMutation({
     mutationFn: async (name: string) => {
-      const res = await fetch(apiUrl('/api/profiles'), {
+      const res = await authFetch('/api/profiles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
-        credentials: 'include',
       });
       if (!res.ok) {
         const err = await res.json();
@@ -211,11 +207,10 @@ export function useRenameProfile() {
 
   return useMutation({
     mutationFn: async ({ id, name }: { id: number; name: string }) => {
-      const res = await fetch(apiUrl(`/api/profiles/${id}`), {
+      const res = await authFetch(`/api/profiles/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
-        credentials: 'include',
       });
       if (!res.ok) throw new Error('Failed to rename profile');
       return res.json();
@@ -233,11 +228,10 @@ export function useUpdateCoverLetter() {
 
   return useMutation({
     mutationFn: async ({ id, coverLetter }: { id: number; coverLetter: string }) => {
-      const res = await fetch(apiUrl(`/api/profiles/${id}`), {
+      const res = await authFetch(`/api/profiles/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ coverLetter }),
-        credentials: 'include',
       });
       if (!res.ok) throw new Error('Failed to update cover letter');
       return res.json();
@@ -259,9 +253,8 @@ export function useDeleteProfile() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(apiUrl(`/api/profiles/${id}`), {
+      const res = await authFetch(`/api/profiles/${id}`, {
         method: 'DELETE',
-        credentials: 'include',
       });
       if (!res.ok) {
         const err = await res.json();
@@ -285,9 +278,8 @@ export function useActivateProfile() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(apiUrl(`/api/profiles/${id}/activate`), {
+      const res = await authFetch(`/api/profiles/${id}/activate`, {
         method: 'POST',
-        credentials: 'include',
       });
       if (!res.ok) throw new Error('Failed to activate profile');
       return res.json();
@@ -305,9 +297,8 @@ export function useClearProfileData() {
 
   return useMutation({
     mutationFn: async () => {
-      const res = await fetch(apiUrl('/api/profile/clear'), {
+      const res = await authFetch('/api/profile/clear', {
         method: 'POST',
-        credentials: 'include',
       });
       if (!res.ok) throw new Error('Failed to clear profile data');
       return res.json();
@@ -327,9 +318,8 @@ export function useDeleteAccount() {
 
   return useMutation({
     mutationFn: async () => {
-      const res = await fetch(apiUrl('/api/account'), {
+      const res = await authFetch('/api/account', {
         method: 'DELETE',
-        credentials: 'include',
       });
       if (!res.ok) throw new Error('Failed to delete account');
       return res.json();

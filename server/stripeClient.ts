@@ -2,7 +2,15 @@ import Stripe from 'stripe';
 
 let connectionSettings: any;
 
-async function getCredentials() {
+async function getCredentials(): Promise<{ publishableKey: string; secretKey: string } | null> {
+  // Standard env vars (Supabase / Railway / local)
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
+  if (secretKey && publishableKey) {
+    return { secretKey, publishableKey };
+  }
+
+  // Replit connector (legacy)
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? 'repl ' + process.env.REPL_IDENTITY
@@ -10,8 +18,8 @@ async function getCredentials() {
       ? 'depl ' + process.env.WEB_REPL_RENEWAL
       : null;
 
-  if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
+  if (!xReplitToken || !hostname) {
+    return null;
   }
 
   const connectorName = 'stripe';
@@ -31,11 +39,10 @@ async function getCredentials() {
   });
 
   const data = await response.json();
-  
   connectionSettings = data.items?.[0];
 
   if (!connectionSettings || (!connectionSettings.settings.publishable || !connectionSettings.settings.secret)) {
-    throw new Error(`Stripe ${targetEnvironment} connection not found`);
+    return null;
   }
 
   return {
@@ -44,31 +51,33 @@ async function getCredentials() {
   };
 }
 
-export async function getUncachableStripeClient() {
-  const { secretKey } = await getCredentials();
+export async function getUncachableStripeClient(): Promise<Stripe | null> {
+  const creds = await getCredentials();
+  if (!creds) return null;
 
-  return new Stripe(secretKey, {
+  return new Stripe(creds.secretKey, {
     apiVersion: '2025-08-27.basil',
   });
 }
 
-export async function getStripePublishableKey() {
-  const { publishableKey } = await getCredentials();
-  return publishableKey;
+export async function getStripePublishableKey(): Promise<string | null> {
+  const creds = await getCredentials();
+  return creds?.publishableKey ?? null;
 }
 
-export async function getStripeSecretKey() {
-  const { secretKey } = await getCredentials();
-  return secretKey;
+export async function getStripeSecretKey(): Promise<string | null> {
+  const creds = await getCredentials();
+  return creds?.secretKey ?? null;
 }
 
 let stripeSync: any = null;
 
-export async function getStripeSync() {
+export async function getStripeSync(): Promise<any | null> {
+  const secretKey = await getStripeSecretKey();
+  if (!secretKey) return null;
+
   if (!stripeSync) {
     const { StripeSync } = await import('stripe-replit-sync');
-    const secretKey = await getStripeSecretKey();
-
     stripeSync = new StripeSync({
       poolConfig: {
         connectionString: process.env.DATABASE_URL!,
@@ -78,4 +87,8 @@ export async function getStripeSync() {
     });
   }
   return stripeSync;
+}
+
+export function isStripeConfigured(): boolean {
+  return !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PUBLISHABLE_KEY);
 }

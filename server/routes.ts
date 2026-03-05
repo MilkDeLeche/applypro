@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api, errorSchemas } from "@shared/routes";
 import { z } from "zod";
-import { setupAuth, registerAuthRoutes } from "./auth";
+import { setupAuth, registerAuthRoutes, requireAuth, getUserId } from "./auth";
 import multer from "multer";
 import { PDFParse } from "pdf-parse";
 import fs from "fs";
@@ -24,16 +24,6 @@ export async function registerRoutes(
   // Auth setup
   await setupAuth(app);
   registerAuthRoutes(app);
-
-  const requireAuth = (req: any, res: any, next: any) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    next();
-  };
-  
-  // Helper to get user ID from session claims
-  const getUserId = (req: any): string => req.user.claims.sub;
 
   app.get(api.profile.get.path, requireAuth, async (req, res) => {
     const userId = getUserId(req);
@@ -403,7 +393,7 @@ export async function registerRoutes(
   app.get('/api/stripe/publishable-key', async (req, res) => {
     try {
       const key = await getStripePublishableKey();
-      res.json({ publishableKey: key });
+      res.json({ publishableKey: key ?? null });
     } catch (error) {
       res.status(500).json({ error: 'Failed to get Stripe key' });
     }
@@ -419,7 +409,10 @@ export async function registerRoutes(
       }
 
       const stripe = await getUncachableStripeClient();
-      
+      if (!stripe) {
+        return res.status(503).json({ error: 'Payments not configured. Set STRIPE_SECRET_KEY.' });
+      }
+
       let customerId = user.stripeCustomerId;
       if (!customerId) {
         const customer = await stripe.customers.create({
@@ -434,12 +427,12 @@ export async function registerRoutes(
         standard: {
           name: 'SudoFillr Standard',
           description: 'Unlimited resume parsing and autofills for 1 year',
-          amount: 3500 // $35
+          amount: 7000 // $70/year
         },
         pro: {
           name: 'SudoFillr Pro',
           description: 'Unlimited everything + 5 resume profiles for 1 year',
-          amount: 4500 // $45
+          amount: 8000 // $80/year
         }
       };
 
@@ -635,10 +628,10 @@ export async function registerRoutes(
     };
     
     const pricing: Record<string, { standard: number; pro: number; currency: string }> = {
-      us: { standard: 35, pro: 45, currency: 'USD' },
-      mx: { standard: 650, pro: 850, currency: 'MXN' },
-      cl: { standard: 30000, pro: 40000, currency: 'CLP' },
-      other: { standard: 35, pro: 45, currency: 'USD' }
+      us: { standard: 70, pro: 80, currency: 'USD' },
+      mx: { standard: 1300, pro: 1500, currency: 'MXN' },
+      cl: { standard: 65000, pro: 75000, currency: 'CLP' },
+      other: { standard: 70, pro: 80, currency: 'USD' }
     };
     
     res.json({

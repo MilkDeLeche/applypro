@@ -1,1 +1,1 @@
-export * from "./replit_integrations/auth";
+export * from "./auth/index";

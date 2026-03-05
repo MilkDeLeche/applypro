@@ -38,6 +38,10 @@ async function initStripe() {
     console.log('Stripe schema ready');
 
     const stripeSync = await getStripeSync();
+    if (!stripeSync) {
+      console.log('STRIPE_SECRET_KEY not set, skipping Stripe sync (payments disabled)');
+      return;
+    }
 
     const replitDomains = process.env.REPLIT_DOMAINS;
     if (replitDomains) {
@@ -148,8 +152,14 @@ app.use((req, res, next) => {
   // In monolithic: serve React build from this server
   if (process.env.NODE_ENV === "production") {
     if (frontendUrl) {
-      // API-only: redirect root to frontend
-      app.get("/", (_req, res) => res.redirect(302, frontendUrl));
+      // API-only: redirect all non-API routes to frontend (SPA handles /dashboard, /login, etc.)
+      app.use((req, res, next) => {
+        if (!req.path.startsWith("/api")) {
+          const target = `${frontendUrl.replace(/\/$/, "")}${req.path || "/"}${req.url?.includes("?") ? req.url.slice(req.url.indexOf("?")) : ""}`;
+          return res.redirect(302, target);
+        }
+        next();
+      });
     } else {
       serveStatic(app);
     }
@@ -163,14 +173,15 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || "5000", 10);
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
-  );
+  const listenOptions: { port: number; host: string; reusePort?: boolean } = {
+    port,
+    host: "0.0.0.0",
+  };
+  // reusePort not supported on Windows
+  if (process.platform !== "win32") {
+    listenOptions.reusePort = true;
+  }
+  httpServer.listen(listenOptions, () => {
+    log(`serving on port ${port}`);
+  });
 })();
