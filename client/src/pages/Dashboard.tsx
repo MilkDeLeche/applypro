@@ -1,4 +1,4 @@
-import { useProfile, useUpdateProfile, useAddExperience, useDeleteExperience, useAddEducation, useDeleteEducation, useClearProfileData, useUpdateCoverLetter } from "@/hooks/use-profile";
+import { useProfile, useUpdateProfile, useAddExperience, useDeleteExperience, useAddEducation, useDeleteEducation, useClearProfileData, useUpdateCoverLetter, useUsage } from "@/hooks/use-profile";
 import { ResumeUpload } from "@/components/ResumeUpload";
 import { ProfileSwitcher } from "@/components/ProfileSwitcher";
 import { Button } from "@/components/ui/button";
@@ -10,16 +10,22 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Trash2, Briefcase, GraduationCap, Link2, Linkedin, User as UserIcon, Mail, Phone, Calendar, RotateCcw, Globe, FileText } from "lucide-react";
+import { Plus, Trash2, Briefcase, GraduationCap, Link2, Linkedin, User as UserIcon, Mail, Phone, Calendar, RotateCcw, Globe, FileText, Crown } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { motion } from "framer-motion";
 import { SUPPORTED_COUNTRIES, type SupportedCountry } from "@shared/schema";
+import { Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+
+const PREMIUM_UPGRADE_MSG = "You have premium features. Upgrade to unlock editing, cover letter, and more.";
 
 export default function Dashboard() {
   const { data, isLoading } = useProfile();
-  
+  const { data: usageData } = useUsage();
+  const isPremium = usageData?.isPremium ?? false;
+
   if (isLoading) {
     return <DashboardSkeleton />;
   }
@@ -49,8 +55,16 @@ export default function Dashboard() {
               </motion.p>
             </div>
             
-            <div className="w-full md:w-auto flex-shrink-0">
-               <EditProfileDialog user={data.user} />
+            <div className="w-full md:w-auto flex-shrink-0 flex flex-col sm:flex-row gap-3">
+               {!isPremium && (
+                 <Link href="/pricing">
+                   <Button variant="outline" size="sm" className="gap-2 text-primary border-primary/30">
+                     <Crown className="w-4 h-4" />
+                     Upgrade to unlock editing
+                   </Button>
+                 </Link>
+               )}
+               <EditProfileDialog user={data.user} isPremium={isPremium} />
             </div>
           </div>
         </div>
@@ -160,7 +174,7 @@ export default function Dashboard() {
                   <Briefcase className="w-6 h-6 text-primary" />
                   Experience
                 </h2>
-                <AddExperienceDialog />
+                <AddExperienceDialog isPremium={isPremium} />
               </div>
               
               <div className="space-y-4">
@@ -168,7 +182,7 @@ export default function Dashboard() {
                   <EmptyState title="No experience added" description="Upload your resume or add manually." />
                 ) : (
                   data.activeProfile.experience.map((exp: any) => (
-                    <ExperienceCard key={exp.id} data={exp} />
+                    <ExperienceCard key={exp.id} data={exp} isPremium={isPremium} />
                   ))
                 )}
               </div>
@@ -185,7 +199,7 @@ export default function Dashboard() {
                   <GraduationCap className="w-6 h-6 text-primary" />
                   Education
                 </h2>
-                <AddEducationDialog />
+                <AddEducationDialog isPremium={isPremium} />
               </div>
               
               <div className="space-y-4">
@@ -193,7 +207,7 @@ export default function Dashboard() {
                   <EmptyState title="No education added" description="Add your degrees and schools." />
                 ) : (
                   data.activeProfile.education.map((edu: any) => (
-                    <EducationCard key={edu.id} data={edu} />
+                    <EducationCard key={edu.id} data={edu} isPremium={isPremium} />
                   ))
                 )}
               </div>
@@ -203,7 +217,8 @@ export default function Dashboard() {
             {data.activeProfile && (
               <CoverLetterSection 
                 profileId={data.activeProfile.profile.id} 
-                coverLetter={data.activeProfile.profile.coverLetter || ''} 
+                coverLetter={data.activeProfile.profile.coverLetter || ''}
+                isPremium={isPremium}
               />
             )}
           </div>
@@ -213,9 +228,18 @@ export default function Dashboard() {
   );
 }
 
-function ExperienceCard({ data }: { data: any }) {
+function ExperienceCard({ data, isPremium }: { data: any; isPremium: boolean }) {
   const { mutate: deleteExp, isPending } = useDeleteExperience();
-  
+  const { toast } = useToast();
+
+  const handleDelete = () => {
+    if (!isPremium) {
+      toast({ title: "Upgrade required", description: PREMIUM_UPGRADE_MSG, variant: "destructive" });
+      return;
+    }
+    deleteExp(data.id);
+  };
+
   return (
     <Card className="group hover:border-primary/50 transition-colors">
       <CardContent className="p-6">
@@ -236,7 +260,7 @@ function ExperienceCard({ data }: { data: any }) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => deleteExp(data.id)}
+            onClick={handleDelete}
             disabled={isPending}
             className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive hover:bg-destructive/10"
           >
@@ -248,8 +272,17 @@ function ExperienceCard({ data }: { data: any }) {
   );
 }
 
-function EducationCard({ data }: { data: any }) {
+function EducationCard({ data, isPremium }: { data: any; isPremium: boolean }) {
   const { mutate: deleteEdu, isPending } = useDeleteEducation();
+  const { toast } = useToast();
+
+  const handleDelete = () => {
+    if (!isPremium) {
+      toast({ title: "Upgrade required", description: PREMIUM_UPGRADE_MSG, variant: "destructive" });
+      return;
+    }
+    deleteEdu(data.id);
+  };
 
   return (
     <Card className="group hover:border-primary/50 transition-colors">
@@ -268,7 +301,7 @@ function EducationCard({ data }: { data: any }) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => deleteEdu(data.id)}
+            onClick={handleDelete}
             disabled={isPending}
             className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive hover:bg-destructive/10"
           >
@@ -289,10 +322,11 @@ function EmptyState({ title, description }: { title: string, description: string
   );
 }
 
-function CoverLetterSection({ profileId, coverLetter }: { profileId: number; coverLetter: string }) {
+function CoverLetterSection({ profileId, coverLetter, isPremium }: { profileId: number; coverLetter: string; isPremium: boolean }) {
   const [text, setText] = useState(coverLetter);
   const [hasChanges, setHasChanges] = useState(false);
   const { mutate: updateCoverLetter, isPending } = useUpdateCoverLetter();
+  const { toast } = useToast();
 
   useEffect(() => {
     setText(coverLetter);
@@ -300,9 +334,22 @@ function CoverLetterSection({ profileId, coverLetter }: { profileId: number; cov
   }, [coverLetter, profileId]);
 
   const handleSave = () => {
+    if (!isPremium) {
+      toast({ title: "Upgrade required", description: PREMIUM_UPGRADE_MSG, variant: "destructive" });
+      return;
+    }
     updateCoverLetter({ id: profileId, coverLetter: text }, {
       onSuccess: () => setHasChanges(false)
     });
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (!isPremium) {
+      toast({ title: "Upgrade required", description: PREMIUM_UPGRADE_MSG, variant: "destructive" });
+      return;
+    }
+    setText(e.target.value);
+    setHasChanges(e.target.value !== coverLetter);
   };
 
   return (
@@ -315,6 +362,9 @@ function CoverLetterSection({ profileId, coverLetter }: { profileId: number; cov
         <h2 className="text-2xl font-bold font-display flex items-center gap-2">
           <FileText className="w-6 h-6 text-primary" />
           Cover Letter
+          {!isPremium && (
+            <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Premium</span>
+          )}
         </h2>
         {hasChanges && (
           <Button 
@@ -334,24 +384,32 @@ function CoverLetterSection({ profileId, coverLetter }: { profileId: number; cov
             it will automatically fill cover letter fields with this content.
           </p>
           <Textarea
-            placeholder="Dear Hiring Manager,&#10;&#10;I am writing to express my interest in..."
+            placeholder={isPremium ? "Dear Hiring Manager,&#10;&#10;I am writing to express my interest in..." : "Upgrade to add your cover letter..."}
             value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-              setHasChanges(e.target.value !== coverLetter);
-            }}
-            className="min-h-[300px] resize-y"
+            onChange={handleChange}
+            onFocus={!isPremium ? () => toast({ title: "Upgrade required", description: PREMIUM_UPGRADE_MSG, variant: "destructive" }) : undefined}
+            readOnly={!isPremium}
+            className={`min-h-[300px] resize-y ${!isPremium ? "cursor-not-allowed bg-muted/50" : ""}`}
             data-testid="textarea-cover-letter"
           />
+          {!isPremium && (
+            <Link href="/pricing">
+              <Button variant="outline" size="sm" className="mt-3 gap-2">
+                <Crown className="w-4 h-4" />
+                Upgrade to unlock
+              </Button>
+            </Link>
+          )}
         </CardContent>
       </Card>
     </motion.div>
   );
 }
 
-function EditProfileDialog({ user }: { user: any }) {
+function EditProfileDialog({ user, isPremium }: { user: any; isPremium: boolean }) {
   const [open, setOpen] = useState(false);
   const { mutate, isPending } = useUpdateProfile();
+  const { toast } = useToast();
   const { register, handleSubmit, control, watch, setValue } = useForm({
     defaultValues: {
       ...user,
@@ -365,6 +423,10 @@ function EditProfileDialog({ user }: { user: any }) {
   const isChile = selectedCountry === SUPPORTED_COUNTRIES.CL;
 
   const onSubmit = (data: any) => {
+    if (!isPremium) {
+      toast({ title: "Upgrade required", description: PREMIUM_UPGRADE_MSG, variant: "destructive" });
+      return;
+    }
     mutate(data, {
       onSuccess: () => setOpen(false)
     });
@@ -383,7 +445,10 @@ function EditProfileDialog({ user }: { user: any }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" data-testid="button-edit-profile">Edit Profile</Button>
+        <Button variant="outline" data-testid="button-edit-profile">
+          {!isPremium && <Crown className="w-4 h-4 mr-2" />}
+          Edit Profile
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] p-0">
         <DialogHeader className="px-6 pt-6 pb-2">
@@ -553,12 +618,17 @@ function EditProfileDialog({ user }: { user: any }) {
   );
 }
 
-function AddExperienceDialog() {
+function AddExperienceDialog({ isPremium }: { isPremium: boolean }) {
   const [open, setOpen] = useState(false);
   const { mutate, isPending } = useAddExperience();
+  const { toast } = useToast();
   const { register, handleSubmit, reset } = useForm();
 
   const onSubmit = (data: any) => {
+    if (!isPremium) {
+      toast({ title: "Upgrade required", description: PREMIUM_UPGRADE_MSG, variant: "destructive" });
+      return;
+    }
     mutate(data, {
       onSuccess: () => {
         setOpen(false);
@@ -614,12 +684,17 @@ function AddExperienceDialog() {
   );
 }
 
-function AddEducationDialog() {
+function AddEducationDialog({ isPremium }: { isPremium: boolean }) {
   const [open, setOpen] = useState(false);
   const { mutate, isPending } = useAddEducation();
+  const { toast } = useToast();
   const { register, handleSubmit, reset } = useForm();
 
   const onSubmit = (data: any) => {
+    if (!isPremium) {
+      toast({ title: "Upgrade required", description: PREMIUM_UPGRADE_MSG, variant: "destructive" });
+      return;
+    }
     mutate(data, {
       onSuccess: () => {
         setOpen(false);

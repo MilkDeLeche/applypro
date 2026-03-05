@@ -5,6 +5,25 @@ import { useToast } from "@/hooks/use-toast";
 import { apiUrl, authFetch } from "@/lib/api";
 import type { UserProfile, InsertExperience, InsertEducation, UpdateProfileRequest } from "@shared/schema";
 
+export type UsageData = {
+  tier: "free" | "standard" | "pro";
+  isPremium: boolean;
+  resumeParses: { used: number; remaining: number; limit: number };
+  autofills: { used: number; remaining: number; limit: number };
+  profiles: { current: number; max: number };
+};
+
+export function useUsage() {
+  return useQuery<UsageData>({
+    queryKey: ["/api/usage"],
+    queryFn: async () => {
+      const res = await authFetch("/api/usage");
+      if (!res.ok) throw new Error("Failed to fetch usage");
+      return res.json();
+    },
+  });
+}
+
 export function useProfile() {
   const { toast } = useToast();
 

@@ -6,9 +6,22 @@ import {
 } from "@shared/schema";
 import { eq, sql, and } from "drizzle-orm";
 
-const FREE_TIER_RESUME_LIMIT = 3;
+const FREE_TIER_RESUME_LIMIT = 1;
 const FREE_TIER_AUTOFILL_LIMIT = 10;
 const PERIOD_DAYS = 30;
+
+// Permanent premium emails (comma-separated in PREMIUM_EMAILS env, or hardcoded fallback)
+const PERMANENT_PREMIUM_EMAILS = new Set(
+  (process.env.PREMIUM_EMAILS || "mangel3457@gmail.com")
+    .toLowerCase()
+    .split(",")
+    .map((e) => e.trim())
+    .filter(Boolean)
+);
+
+function isPermanentPremium(email: string | null | undefined): boolean {
+  return !!email && PERMANENT_PREMIUM_EMAILS.has(email.toLowerCase());
+}
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -208,7 +221,10 @@ export class DatabaseStorage implements IStorage {
     const user = await this.getUser(userId);
     if (!user) return { allowed: false, remaining: 0, isPremium: false };
 
-    const isPremium = !!user.stripeSubscriptionId;
+    // Premium = permanent list, Stripe, or Lemon Squeezy subscription
+    const isPremium = isPermanentPremium(user.email) ||
+      !!(user.stripeSubscriptionId || user.lemonSqueezySubscriptionId) ||
+      (user.subscriptionTier === 'standard' || user.subscriptionTier === 'pro');
     if (isPremium) return { allowed: true, remaining: -1, isPremium: true };
 
     const used = user.resumeParsesThisPeriod || 0;
@@ -221,7 +237,10 @@ export class DatabaseStorage implements IStorage {
     const user = await this.getUser(userId);
     if (!user) return { allowed: false, remaining: 0, isPremium: false };
 
-    const isPremium = !!user.stripeSubscriptionId;
+    // Premium = permanent list, Stripe, or Lemon Squeezy subscription
+    const isPremium = isPermanentPremium(user.email) ||
+      !!(user.stripeSubscriptionId || user.lemonSqueezySubscriptionId) ||
+      (user.subscriptionTier === 'standard' || user.subscriptionTier === 'pro');
     if (isPremium) return { allowed: true, remaining: -1, isPremium: true };
 
     const used = user.autofillsThisPeriod || 0;

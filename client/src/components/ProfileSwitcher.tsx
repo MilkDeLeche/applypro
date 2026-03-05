@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useProfiles, useCreateProfile, useDeleteProfile, useRenameProfile, useActivateProfile } from "@/hooks/use-profile";
-import { useQuery } from "@tanstack/react-query";
+import { useProfiles, useCreateProfile, useDeleteProfile, useRenameProfile, useActivateProfile, useUsage } from "@/hooks/use-profile";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -10,15 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import { FileText, Plus, MoreVertical, Check, Pencil, Trash2, Crown } from "lucide-react";
 import { Link } from "wouter";
 
-type UsageData = {
-  tier: 'free' | 'standard' | 'pro';
-  isPremium: boolean;
-  profiles: { current: number; max: number };
-};
+const PREMIUM_UPGRADE_MSG = "You have premium features. Upgrade to unlock editing, cover letter, and more.";
 
 export function ProfileSwitcher() {
   const { data: profilesData, isLoading } = useProfiles();
-  const { data: usageData } = useQuery<UsageData>({ queryKey: ['/api/usage'] });
+  const { data: usageData } = useUsage();
+  const { toast } = useToast();
   const createProfile = useCreateProfile();
   const deleteProfile = useDeleteProfile();
   const renameProfile = useRenameProfile();
@@ -30,11 +27,16 @@ export function ProfileSwitcher() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const tier = usageData?.tier || 'free';
+  const isPremium = usageData?.isPremium ?? false;
   const canCreateMore = usageData?.profiles ? usageData.profiles.current < usageData.profiles.max : false;
   const isProTier = tier === 'pro';
 
   const handleCreate = () => {
     if (!newProfileName.trim()) return;
+    if (!isPremium) {
+      toast({ title: "Upgrade required", description: PREMIUM_UPGRADE_MSG, variant: "destructive" });
+      return;
+    }
     createProfile.mutate(newProfileName.trim(), {
       onSuccess: () => {
         setNewProfileName("");
@@ -49,6 +51,10 @@ export function ProfileSwitcher() {
 
   const handleRename = (id: number) => {
     if (!editingName.trim()) return;
+    if (!isPremium) {
+      toast({ title: "Upgrade required", description: PREMIUM_UPGRADE_MSG, variant: "destructive" });
+      return;
+    }
     renameProfile.mutate({ id, name: editingName.trim() }, {
       onSuccess: () => {
         setEditingId(null);
@@ -58,6 +64,10 @@ export function ProfileSwitcher() {
   };
 
   const handleDelete = (id: number) => {
+    if (!isPremium) {
+      toast({ title: "Upgrade required", description: PREMIUM_UPGRADE_MSG, variant: "destructive" });
+      return;
+    }
     deleteProfile.mutate(id);
   };
 

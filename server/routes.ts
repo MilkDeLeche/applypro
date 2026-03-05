@@ -17,6 +17,32 @@ import {
 
 const upload = multer({ dest: '/tmp/uploads/' });
 
+const PREMIUM_REQUIRED_MSG = "You have premium features. Upgrade to unlock editing, cover letter, and more.";
+
+const PERMANENT_PREMIUM_EMAILS = new Set(
+  (process.env.PREMIUM_EMAILS || "mangel3457@gmail.com")
+    .toLowerCase()
+    .split(",")
+    .map((e: string) => e.trim())
+    .filter(Boolean)
+);
+
+function isPermanentPremium(email: string | null | undefined): boolean {
+  return !!email && PERMANENT_PREMIUM_EMAILS.has(email.toLowerCase());
+}
+
+async function requirePremium(req: any, res: any, next: any) {
+  const userId = getUserId(req);
+  const user = await storage.getUser(userId);
+  const isPremium = isPermanentPremium(user?.email) ||
+    !!(user?.stripeSubscriptionId || user?.lemonSqueezySubscriptionId) ||
+    (user?.subscriptionTier === 'standard' || user?.subscriptionTier === 'pro');
+  if (!isPremium) {
+    return res.status(403).json({ message: PREMIUM_REQUIRED_MSG });
+  }
+  next();
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -31,7 +57,7 @@ export async function registerRoutes(
     res.json(profile);
   });
 
-  app.put(api.profile.update.path, requireAuth, async (req, res) => {
+  app.put(api.profile.update.path, requireAuth, requirePremium, async (req, res) => {
     try {
       const input = api.profile.update.input.parse(req.body);
       const userId = getUserId(req);
@@ -52,7 +78,7 @@ export async function registerRoutes(
     const usageCheck = await storage.canParseResume(userId);
     if (!usageCheck.allowed) {
       return res.status(403).json({ 
-        message: "Free tier limit reached. Upgrade to Pro for unlimited resume parsing.",
+        message: "Free tier: 1 resume parse allowed. Upgrade for unlimited parsing and editing.",
         remaining: usageCheck.remaining,
         isPremium: usageCheck.isPremium
       });
@@ -242,7 +268,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post(api.experience.create.path, requireAuth, async (req, res) => {
+  app.post(api.experience.create.path, requireAuth, requirePremium, async (req, res) => {
     const input = api.experience.create.input.parse(req.body);
     const userId = getUserId(req);
     const user = await storage.getUser(userId);
@@ -253,12 +279,12 @@ export async function registerRoutes(
     res.status(201).json(exp);
   });
 
-  app.delete(api.experience.delete.path, requireAuth, async (req, res) => {
+  app.delete(api.experience.delete.path, requireAuth, requirePremium, async (req, res) => {
     await storage.deleteExperience(Number(req.params.id));
     res.status(204).send();
   });
   
-  app.post(api.education.create.path, requireAuth, async (req, res) => {
+  app.post(api.education.create.path, requireAuth, requirePremium, async (req, res) => {
     const input = api.education.create.input.parse(req.body);
     const userId = getUserId(req);
     const user = await storage.getUser(userId);
@@ -269,7 +295,7 @@ export async function registerRoutes(
     res.status(201).json(edu);
   });
 
-  app.delete(api.education.delete.path, requireAuth, async (req, res) => {
+  app.delete(api.education.delete.path, requireAuth, requirePremium, async (req, res) => {
     await storage.deleteEducation(Number(req.params.id));
     res.status(204).send();
   });
@@ -283,11 +309,13 @@ export async function registerRoutes(
     
     res.json({
       tier: user?.subscriptionTier || 'free',
-      isPremium: !!user?.stripeSubscriptionId,
+      isPremium: isPermanentPremium(user?.email) ||
+        !!(user?.stripeSubscriptionId || user?.lemonSqueezySubscriptionId) ||
+        (user?.subscriptionTier === 'standard' || user?.subscriptionTier === 'pro'),
       resumeParses: {
         used: user?.resumeParsesThisPeriod || 0,
         remaining: resumeUsage.remaining,
-        limit: resumeUsage.isPremium ? -1 : 3
+        limit: resumeUsage.isPremium ? -1 : 1
       },
       autofills: {
         used: user?.autofillsThisPeriod || 0,
@@ -334,7 +362,7 @@ export async function registerRoutes(
     res.json({ profiles, activeProfileId: user?.activeProfileId });
   });
 
-  app.post('/api/profiles', requireAuth, async (req, res) => {
+  app.post('/api/profiles', requireAuth, requirePremium, async (req, res) => {
     const userId = getUserId(req);
     const { name } = req.body;
     
@@ -351,7 +379,7 @@ export async function registerRoutes(
     res.status(201).json(profile);
   });
 
-  app.put('/api/profiles/:id', requireAuth, async (req, res) => {
+  app.put('/api/profiles/:id', requireAuth, requirePremium, async (req, res) => {
     const profileId = Number(req.params.id);
     const { name, coverLetter } = req.body;
     const updates: { name?: string; coverLetter?: string | null } = {};
@@ -361,7 +389,7 @@ export async function registerRoutes(
     res.json(profile);
   });
 
-  app.delete('/api/profiles/:id', requireAuth, async (req, res) => {
+  app.delete('/api/profiles/:id', requireAuth, requirePremium, async (req, res) => {
     const userId = getUserId(req);
     const profileId = Number(req.params.id);
     
@@ -456,8 +484,8 @@ export async function registerRoutes(
         }],
         mode: 'subscription',
         metadata: { tier: tier || 'standard', userId },
-        success_url: `${req.protocol}://${req.get('host')}/dashboard?success=true`,
-        cancel_url: `${req.protocol}://${req.get('host')}/pricing?canceled=true`,
+        success_url: `${(process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '')}/dashboard?success=true`,
+        cancel_url: `${(process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '')}/pricing?canceled=true`,
       });
 
       res.json({ url: session.url });
@@ -521,7 +549,7 @@ export async function registerRoutes(
       const stripe = await getUncachableStripeClient();
       const session = await stripe.billingPortal.sessions.create({
         customer: user.stripeCustomerId,
-        return_url: `${req.protocol}://${req.get('host')}/dashboard`,
+        return_url: `${(process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '')}/dashboard`,
       });
 
       res.json({ url: session.url });
@@ -546,7 +574,8 @@ export async function registerRoutes(
         return res.status(404).json({ error: 'User not found' });
       }
       
-      const successUrl = `${req.protocol}://${req.get('host')}/dashboard?success=true`;
+      const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+      const successUrl = `${baseUrl.replace(/\/$/, '')}/dashboard?success=true`;
       
       const checkout = await createLemonSqueezyCheckout({
         tier: tier || 'standard',
